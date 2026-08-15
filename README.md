@@ -1,8 +1,9 @@
-# TOEIC Speaking 연습 앱
+# TOEIC Speaking 연습 (웹앱)
 
-TOEIC Speaking 시험(2021 개정, 11문항)을 파트별로 연습하는 Flutter 안드로이드 앱입니다.
-실제 시험과 동일한 **준비 시간 → 답변 시간** 흐름으로 진행되며, 답변은 자동으로 녹음되어
-바로 다시 들어볼 수 있습니다.
+TOEIC Speaking 시험(2021 개정, 11문항)을 파트별로 연습하는 Flutter 웹앱입니다.
+실제 시험과 동일한 **준비 시간 → 답변 시간** 흐름으로 진행되며, 브라우저 마이크로
+답변이 자동 녹음되어 바로 다시 들어볼 수 있습니다. Firebase Hosting 배포용 설정이
+들어 있습니다.
 
 ## 화면 구성
 
@@ -18,21 +19,36 @@ TOEIC Speaking 시험(2021 개정, 11문항)을 파트별로 연습하는 Flutte
 | Q11 의견 제시 | 찬반·선택형 (준비 45초 / 답변 60초) |
 | 녹음 기록 | 저장된 모든 녹음 재생·삭제 |
 
-탭이 화면 너비를 넘기 때문에 좌우로 밀어서 이동할 수 있고, 본문을 스와이프해도 탭이 함께
-움직입니다. 탭 색상은 파트별로 다르게 표시됩니다.
+탭이 화면 너비를 넘기 때문에 좌우로 밀어서 이동할 수 있고, 본문을 스와이프해도 탭이
+함께 움직입니다. 탭 색상은 파트별로 다릅니다. PC 브라우저에서는 화면이 과도하게
+늘어나지 않도록 가운데 정렬됩니다.
 
 ## 주요 기능
 
 - **실전 타이머** — 파트·문항별로 정해진 준비/답변 시간을 원형 카운트다운으로 표시합니다.
-  준비 시간 중에 "바로 답변 시작"으로 건너뛰거나, 답변 도중 "답변 끝내기"로 조기 종료할 수 있습니다.
-- **자동 녹음** — 답변 시간이 시작되면 녹음이 자동으로 시작되고, 시간이 끝나면 자동 저장됩니다.
-  Q5-7 / Q8-10 처럼 하위 문항이 여러 개인 경우 문항마다 따로 저장됩니다.
-- **바로 듣기** — 연습이 끝나면 그 자리에서 재생할 수 있고, "녹음 기록" 탭에 모두 모입니다.
-- **파트별 공략법** — 각 파트의 채점 포인트와 바로 쓰는 답변 템플릿을 바텀시트로 제공합니다.
-- **문항 자료** — 낭독 지문, 사진 상황 설명, 일정표 자료, 핵심 표현, 일부 문항의 모범 답안 포함.
+  준비 중 "바로 답변 시작", 답변 중 "답변 끝내기"로 건너뛸 수 있습니다.
+- **자동 녹음** — 답변 시간이 시작되면 녹음이 자동으로 시작되고 끝나면 자동 저장됩니다.
+  Q5-7 / Q8-10 처럼 하위 문항이 여러 개면 문항마다 따로 저장됩니다.
+  마이크 권한은 준비 시간이 시작되기 전에 미리 확인하므로 권한 창 때문에 시간을 까먹지 않습니다.
+- **바로 듣기** — 연습이 끝나면 그 자리에서 재생하고, "녹음 기록" 탭에 모두 모입니다.
+- **파트별 공략법** — 채점 포인트와 바로 쓰는 답변 템플릿을 바텀시트로 제공합니다.
+- **문항 자료** — 낭독 지문, 사진 상황 설명, 일정표 자료, 핵심 표현, 일부 문항의 모범 답안.
 - **학습 통계** — 총 녹음 수 / 총 발화 시간 / 연습한 날짜 수.
 
-녹음 파일은 앱 내부 저장소(`앱 문서 디렉터리/recordings`)에만 저장되며 외부로 전송되지 않습니다.
+### 녹음 저장 방식
+
+브라우저에는 파일 시스템이 없으므로, 녹음은 **브라우저 안(IndexedDB)** 에만 저장됩니다.
+
+- 서버로 전송되지 않습니다. 다른 기기·다른 브라우저에서는 보이지 않습니다.
+- `record` 가 MediaRecorder(WebM/Opus)로 녹음 → blob URL → base64 data URL 로 바꿔 저장합니다.
+- 목록에는 메타데이터만 읽고, 실제 오디오는 재생할 때만 꺼내옵니다.
+- 시크릿 모드 등으로 IndexedDB 를 쓸 수 없으면 그 세션 동안만 유지되며, 안내 문구가 표시됩니다.
+
+### 브라우저 요구사항
+
+- 마이크 사용에는 **HTTPS 가 필요합니다**(`localhost` 는 예외). Firebase Hosting 은 HTTPS 를 기본 제공합니다.
+- Chrome / Edge / Firefox 최신 버전에서 동작합니다. iOS Safari 는 MediaRecorder 지원이
+  버전에 따라 제한적일 수 있습니다.
 
 ## 실행 방법
 
@@ -40,44 +56,61 @@ Flutter 3.27 이상이 필요합니다(개발·검증은 Flutter 3.47 / Dart 3.1
 
 ```bash
 flutter pub get
-flutter run            # 안드로이드 기기 또는 에뮬레이터 연결 상태에서
+flutter run -d chrome          # 개발
+flutter build web --release    # 배포용 번들 → build/web
 ```
 
-APK 빌드:
+## Firebase Hosting 배포
 
 ```bash
-flutter build apk --release
+npm install -g firebase-tools
+firebase login
+firebase use --add                # Firebase 프로젝트 선택 → .firebaserc 생성
+firebase deploy --only hosting
 ```
 
-> 릴리스 빌드는 현재 디버그 키로 서명되어 있습니다. 배포하려면
-> `android/app/build.gradle.kts` 의 `signingConfig` 를 본인 키스토어로 바꾸세요.
+`firebase.json` 에 `predeploy` 로 `flutter build web --release` 가 걸려 있어서
+`firebase deploy` 만 실행해도 최신 빌드가 올라갑니다. 이미 빌드해 둔 결과만 올리려면
+`firebase deploy --only hosting --except functions` 대신 predeploy 항목을 지우세요.
 
-첫 연습을 시작하면 마이크 권한을 물어봅니다. 거부한 경우 시스템 설정에서 다시 허용해야
-녹음이 동작합니다.
+설정 요약:
 
-## 검증
+- `public: build/web`, SPA 라우팅(`rewrites`)
+- `index.html` / `main.dart.js` / `flutter_bootstrap.js` 는 `no-cache` — 배포 즉시 새 버전이 반영됩니다.
+- `canvaskit/` 1일, `assets/` 1시간 캐시.
+- `web/flutter_bootstrap.js` 에서 CanvasKit 을 Google CDN(gstatic) 대신 **같은 도메인에서** 받도록 지정했습니다. 사내망에서 CDN 이 막혀 있어도 앱이 뜹니다.
+- Flutter 의 서비스 워커는 쓰지 않습니다(항상 최신 버전 로드).
+
+## 검증 상태
 
 ```bash
 flutter analyze     # 이슈 없음
 flutter test        # 11개 테스트 통과
+flutter build web --release   # 성공
 ```
+
+> 브라우저에서의 실제 동작(녹음 → 저장 → 재생)은 이 저장소의 개발 환경에서 확인하지
+> 못했습니다. 샌드박스의 헤드리스 Chromium 에서 Flutter 3.47 웹 엔진이 초기화를 끝내지
+> 못하는데, 기본 `flutter create` 카운터 앱도 동일하게 멈추는 것으로 보아 환경 제약입니다.
+> 배포 전에 실제 브라우저에서 한 번 확인해 주세요.
 
 ## 프로젝트 구조
 
 ```
 lib/
-├── main.dart                      앱 진입점
+├── main.dart                      앱 진입점 (넓은 화면 가운데 정렬 포함)
 ├── theme.dart                     테마, 파트별 색상/아이콘
 ├── models/
 │   ├── toeic_part.dart            파트 정의(시간, 공략법, 템플릿)
 │   ├── question.dart              문항·질문·자료 모델
-│   └── attempt.dart               녹음 1건 모델 + JSON 직렬화
+│   └── attempt.dart               녹음 메타데이터 + JSON 직렬화
 ├── data/
 │   └── question_bank.dart         파트별 연습 문항 데이터
 ├── services/
-│   ├── recorder_service.dart      record 패키지 래퍼(권한/파일/녹음)
-│   ├── playback_service.dart      audioplayers 기반 재생
-│   └── attempt_store.dart         녹음 기록 저장(SharedPreferences)
+│   ├── recorder_service.dart      마이크 녹음 → data URL 변환
+│   ├── recording_storage.dart     IndexedDB 저장(메타데이터/오디오 분리)
+│   ├── playback_service.dart      재생(재생 시점에 오디오 로드)
+│   └── attempt_store.dart         녹음 목록 상태
 ├── screens/
 │   ├── home_screen.dart           가로 스크롤 탭 + TabBarView
 │   ├── overview_tab.dart          "전체" 탭
@@ -87,11 +120,16 @@ lib/
 └── widgets/
     ├── common.dart                카드, 배지, 자료 표, 공략법 시트
     └── countdown_ring.dart        원형 카운트다운
+
+web/
+├── index.html                     로딩 표시, 한국어 메타데이터
+├── flutter_bootstrap.js           CanvasKit 자체 호스팅 설정
+└── manifest.json                  PWA 매니페스트(홈 화면 추가용)
 ```
 
 ## 문항 추가하기
 
-`lib/data/question_bank.dart` 의 `kQuestions` 리스트에 `Question` 을 추가하면 해당 파트 탭에
+`lib/data/question_bank.dart` 의 `kQuestions` 에 `Question` 을 추가하면 해당 파트 탭에
 자동으로 나타납니다. 화면 코드는 손대지 않아도 됩니다.
 
 ```dart
@@ -109,5 +147,5 @@ Question(
 
 ## 사용 패키지
 
-`record`(녹음) · `audioplayers`(재생) · `path_provider`(저장 경로) ·
-`shared_preferences`(기록 저장) · `intl`(날짜 표시)
+`record`(녹음) · `audioplayers`(재생) · `idb_shim`(IndexedDB) ·
+`http`(blob → 바이트) · `intl`(날짜 표시)

@@ -1,5 +1,5 @@
 name: toeic_speaking
-description: TOEIC Speaking 파트별 실전 연습 앱 (Android)
+description: TOEIC Speaking 파트별 실전 연습 웹앱
 publish_to: "none"
 version: 1.0.0+1
 
@@ -11,10 +11,10 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
-  record: ^5.1.2
-  audioplayers: ^6.1.0
-  path_provider: ^2.1.4
-  shared_preferences: ^2.3.2
+  record: ^5.1.2 # 브라우저 MediaRecorder 녹음
+  audioplayers: ^6.1.0 # 녹음 재생
+  idb_shim: ^2.6.1 # IndexedDB 저장
+  http: ^1.2.2 # blob URL → 바이트 변환
   intl: ^0.19.0
 
 dev_dependencies:

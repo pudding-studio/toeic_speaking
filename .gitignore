@@ -15,15 +15,11 @@ pubspec.lock
 *.ipr
 *.iws
 
-# Android
-android/.gradle/
-android/local.properties
-android/app/debug/
-android/app/profile/
-android/app/release/
-android/key.properties
-*.jks
-*.keystore
+# Firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
 
 # 기타
 .DS_Store

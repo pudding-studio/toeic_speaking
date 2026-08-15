@@ -1,7 +1,4 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import 'screens/home_screen.dart';
 import 'services/attempt_store.dart';
@@ -9,11 +6,6 @@ import 'theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // 세로 방향으로 고정한다.
-  unawaited(SystemChrome.setPreferredOrientations(<DeviceOrientation>[
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]));
   await AttemptStore.instance.load();
   runApp(const ToeicSpeakingApp());
 }
@@ -29,6 +21,16 @@ class ToeicSpeakingApp extends StatelessWidget {
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: ThemeMode.system,
+      // 넓은 화면(PC 브라우저)에서 화면 전체로 늘어나지 않도록 가운데 정렬한다.
+      builder: (BuildContext context, Widget? child) => ColoredBox(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 720),
+            child: child ?? const SizedBox.shrink(),
+          ),
+        ),
+      ),
       home: const HomeScreen(),
     );
   }

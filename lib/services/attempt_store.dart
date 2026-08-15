@@ -1,19 +1,15 @@
-import 'dart:io';
-
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/attempt.dart';
 import '../models/toeic_part.dart';
+import 'recording_storage.dart';
 
-/// 녹음 기록을 SharedPreferences 에 JSON 배열로 저장한다.
-/// 최신 기록이 항상 앞에 오도록 유지한다.
+/// 녹음 기록 목록을 들고 있는 저장소.
+/// 메타데이터는 메모리에, 오디오는 IndexedDB 에 둔다.
 class AttemptStore extends ChangeNotifier {
   AttemptStore._();
 
   static final AttemptStore instance = AttemptStore._();
-
-  static const String _key = 'attempts_v1';
 
   final List<Attempt> _attempts = <Attempt>[];
   bool _loaded = false;
@@ -21,53 +17,41 @@ class AttemptStore extends ChangeNotifier {
   List<Attempt> get attempts => List<Attempt>.unmodifiable(_attempts);
   bool get isLoaded => _loaded;
 
+  /// IndexedDB 를 못 쓰는 브라우저(시크릿 모드 등)에서는 새로고침 시 기록이 사라진다.
+  bool get isPersistent => RecordingStorage.instance.isAvailable;
+
   Future<void> load() async {
     if (_loaded) return;
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    final List<String> raw = prefs.getStringList(_key) ?? const <String>[];
+    _loaded = true;
+    final List<String> raw = await RecordingStorage.instance.loadAttemptJson();
     _attempts
       ..clear()
-      ..addAll(
-        raw.map(Attempt.fromJson).whereType<Attempt>(),
-      );
+      ..addAll(raw.map(Attempt.fromJson).whereType<Attempt>());
     _sort();
-    _loaded = true;
     notifyListeners();
   }
 
-  Future<void> add(Attempt attempt) async {
+  Future<void> add(Attempt attempt, String audioDataUrl) async {
     _attempts.insert(0, attempt);
     _sort();
-    await _persist();
     notifyListeners();
+    await RecordingStorage.instance.saveAttempt(
+      id: attempt.id,
+      attemptJson: attempt.toJson(),
+      audioDataUrl: audioDataUrl,
+    );
   }
 
-  /// 기록과 함께 실제 음성 파일도 삭제한다.
   Future<void> remove(Attempt attempt) async {
     _attempts.removeWhere((Attempt a) => a.id == attempt.id);
-    await _persist();
     notifyListeners();
-    try {
-      final File file = File(attempt.filePath);
-      if (file.existsSync()) await file.delete();
-    } on FileSystemException catch (e) {
-      debugPrint('녹음 파일 삭제 실패: $e');
-    }
+    await RecordingStorage.instance.delete(attempt.id);
   }
 
   Future<void> clearAll() async {
-    final List<Attempt> copy = List<Attempt>.of(_attempts);
     _attempts.clear();
-    await _persist();
     notifyListeners();
-    for (final Attempt a in copy) {
-      try {
-        final File file = File(a.filePath);
-        if (file.existsSync()) await file.delete();
-      } on FileSystemException catch (e) {
-        debugPrint('녹음 파일 삭제 실패: $e');
-      }
-    }
+    await RecordingStorage.instance.clear();
   }
 
   List<Attempt> ofQuestion(String questionId) => _attempts
@@ -97,14 +81,6 @@ class AttemptStore extends ChangeNotifier {
         ),
       );
 
-  void _sort() =>
-      _attempts.sort((Attempt a, Attempt b) => b.createdAt.compareTo(a.createdAt));
-
-  Future<void> _persist() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(
-      _key,
-      _attempts.map((Attempt a) => a.toJson()).toList(growable: false),
-    );
-  }
+  void _sort() => _attempts
+      .sort((Attempt a, Attempt b) => b.createdAt.compareTo(a.createdAt));
 }

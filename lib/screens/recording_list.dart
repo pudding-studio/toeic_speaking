@@ -32,7 +32,8 @@ class AttemptTile extends StatelessWidget {
     return AnimatedBuilder(
       animation: PlaybackService.instance,
       builder: (BuildContext context, Widget? _) {
-        final bool playing = PlaybackService.instance.isPlaying(attempt.filePath);
+        final bool playing = PlaybackService.instance.isPlaying(attempt.id);
+        final bool loading = PlaybackService.instance.isLoading(attempt.id);
         return Container(
           margin: const EdgeInsets.only(bottom: 8),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -48,14 +49,26 @@ class AttemptTile extends StatelessWidget {
           child: Row(
             children: <Widget>[
               IconButton(
-                onPressed: () => PlaybackService.instance.toggle(attempt.filePath),
+                tooltip: playing ? '정지' : '재생',
+                onPressed: loading
+                    ? null
+                    : () => PlaybackService.instance.toggle(attempt.id),
                 style: IconButton.styleFrom(
                   backgroundColor: color.withValues(alpha: 0.12),
                   foregroundColor: color,
                 ),
-                icon: Icon(
-                  playing ? Icons.stop_rounded : Icons.play_arrow_rounded,
-                ),
+                icon: loading
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: color,
+                        ),
+                      )
+                    : Icon(
+                        playing ? Icons.stop_rounded : Icons.play_arrow_rounded,
+                      ),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -92,6 +105,7 @@ class AttemptTile extends StatelessWidget {
                 tooltip: '삭제',
                 onPressed: () async {
                   if (playing) await PlaybackService.instance.stop();
+                  PlaybackService.instance.forget(attempt.id);
                   await AttemptStore.instance.remove(attempt);
                   onDeleted?.call();
                 },
@@ -122,6 +136,7 @@ class HistoryTab extends StatelessWidget {
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
           children: <Widget>[
+            if (!AttemptStore.instance.isPersistent) const _StorageWarning(),
             Row(
               children: <Widget>[
                 Expanded(
@@ -169,6 +184,42 @@ class HistoryTab extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+
+/// IndexedDB 를 쓸 수 없을 때(시크릿 모드 등) 보여 주는 안내.
+class _StorageWarning extends StatelessWidget {
+  const _StorageWarning();
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: scheme.errorContainer.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Icon(Icons.info_outline, size: 18, color: scheme.onErrorContainer),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '이 브라우저에서는 녹음을 저장할 수 없습니다(시크릿 모드 등). '
+              '새로고침하면 기록이 사라집니다.',
+              style: TextStyle(
+                fontSize: 13,
+                height: 1.45,
+                color: scheme.onErrorContainer,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

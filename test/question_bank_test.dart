@@ -58,7 +58,6 @@ void main() {
         partId: PartId.describePicture,
         stepIndex: 2,
         promptLabel: 'Question 7',
-        filePath: '/data/rec.m4a',
         durationSeconds: 30,
         createdAt: DateTime.parse('2026-01-02T03:04:05.000'),
       );
@@ -71,7 +70,6 @@ void main() {
       expect(restored.partId, original.partId);
       expect(restored.stepIndex, original.stepIndex);
       expect(restored.promptLabel, original.promptLabel);
-      expect(restored.filePath, original.filePath);
       expect(restored.durationSeconds, original.durationSeconds);
       expect(restored.createdAt, original.createdAt);
     });

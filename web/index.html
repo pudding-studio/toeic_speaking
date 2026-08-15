@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <!-- 하위 경로에 배포한다면 flutter build web --base-href 로 바꾼다. -->
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="TOEIC Speaking 파트별 실전 연습. 실제 시험과 같은 시간으로 답변을 녹음하고 바로 들어보세요.">
+  <meta name="theme-color" content="#2F5BEA">
+
+  <!-- iOS 홈 화면 추가 -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="TOEIC Speaking">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>TOEIC Speaking 연습</title>
+  <link rel="manifest" href="manifest.json">
+
+  <style>
+    html, body { margin: 0; padding: 0; height: 100%; background-color: #f6f7fb; }
+    @media (prefers-color-scheme: dark) {
+      html, body { background-color: #111318; }
+    }
+    /* 앱이 뜨기 전까지 보여 주는 로딩 표시 */
+    #loading {
+      position: fixed; inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                   "Malgun Gothic", "Noto Sans KR", sans-serif;
+      color: #5a6072;
+    }
+    #loading .spinner {
+      width: 34px; height: 34px;
+      border: 3px solid rgba(47, 91, 234, 0.2);
+      border-top-color: #2F5BEA;
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div id="loading">
+    <div class="spinner"></div>
+    <div>TOEIC Speaking 연습을 불러오는 중…</div>
+  </div>
+
+  <script src="flutter_bootstrap.js" async></script>
+  <script>
+    // Flutter 첫 프레임이 그려지면 로딩 표시를 지운다.
+    window.addEventListener('flutter-first-frame', function () {
+      const el = document.getElementById('loading');
+      if (el) el.remove();
+    });
+  </script>
+</body>
+</html>

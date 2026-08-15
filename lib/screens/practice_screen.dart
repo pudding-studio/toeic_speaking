@@ -7,6 +7,7 @@ import '../models/attempt.dart';
 import '../models/question.dart';
 import '../models/toeic_part.dart';
 import '../services/attempt_store.dart';
+import '../services/playback_service.dart';
 import '../services/recorder_service.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
@@ -33,6 +34,9 @@ class _PracticeScreenState extends State<PracticeScreen> {
   int _stepIndex = 0;
   _Phase _phase = _Phase.ready;
   bool _busy = false;
+
+  /// 마이크 권한을 이미 확인했는지(연습 중 권한 창이 뜨는 것을 막기 위해).
+  bool _micReady = false;
 
   final List<Attempt> _sessionAttempts = <Attempt>[];
 
@@ -90,6 +94,16 @@ class _PracticeScreenState extends State<PracticeScreen> {
 
   Future<void> _beginStep() async {
     unawaited(HapticFeedback.mediumImpact());
+    // 준비 시간 도중에 브라우저 권한 창이 뜨면 시간을 까먹으므로 먼저 물어본다.
+    if (!_micReady) {
+      final bool granted = await RecorderService.instance.hasPermission();
+      if (!mounted) return;
+      if (!granted) {
+        _showPermissionDialog();
+        return;
+      }
+      _micReady = true;
+    }
     if (_step.prepSeconds <= 0) {
       await _startAnswering();
       return;
@@ -104,10 +118,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
     if (_busy) return;
     _busy = true;
     _stopCountdown();
-    final bool started = await RecorderService.instance.start(
-      questionId: _q.id,
-      stepIndex: _stepIndex,
-    );
+    final bool started = await RecorderService.instance.start();
     _busy = false;
     if (!mounted) return;
     if (!started) {
@@ -130,25 +141,26 @@ class _PracticeScreenState extends State<PracticeScreen> {
     final int spoken = auto
         ? _step.answerSeconds
         : (_phaseTotalMs - _remainingMs) ~/ 1000;
-    final String? path = await RecorderService.instance.stop();
+    final String? audioDataUrl = await RecorderService.instance.stopAndRead();
     _busy = false;
     if (!mounted) return;
 
     unawaited(HapticFeedback.mediumImpact());
 
-    if (path != null) {
+    if (audioDataUrl != null) {
       final Attempt attempt = Attempt(
         id: '${_q.id}_${_stepIndex}_${DateTime.now().microsecondsSinceEpoch}',
         questionId: _q.id,
         partId: _q.partId,
         stepIndex: _stepIndex,
         promptLabel: _step.label ?? _q.title,
-        filePath: path,
         durationSeconds: spoken < 1 ? 1 : spoken,
         createdAt: DateTime.now(),
       );
+      // 저장이 끝나기 전에도 바로 들을 수 있게 캐시에 넣어 둔다.
+      PlaybackService.instance.cache(attempt.id, audioDataUrl);
       _sessionAttempts.insert(0, attempt);
-      await AttemptStore.instance.add(attempt);
+      await AttemptStore.instance.add(attempt, audioDataUrl);
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('녹음이 저장되지 않았습니다. 마이크 상태를 확인해 주세요.')),
@@ -194,8 +206,8 @@ class _PracticeScreenState extends State<PracticeScreen> {
       builder: (BuildContext context) => AlertDialog(
         title: const Text('마이크 권한이 필요합니다'),
         content: const Text(
-          '녹음을 하려면 마이크 권한을 허용해 주세요.\n'
-          '설정 › 애플리케이션 › TOEIC Speaking › 권한에서 변경할 수 있습니다.',
+          '녹음을 하려면 브라우저에서 마이크 사용을 허용해 주세요.\n'
+          '거부한 경우 주소창 왼쪽의 자물쇠 아이콘에서 다시 허용할 수 있습니다.',
         ),
         actions: <Widget>[
           TextButton(

@@ -1,15 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:toeic_speaking/models/toeic_part.dart';
 import 'package:toeic_speaking/screens/home_screen.dart';
 import 'package:toeic_speaking/theme.dart';
 
 void main() {
-  setUp(() {
-    SharedPreferences.setMockInitialValues(<String, Object>{});
-  });
-
   Widget wrap() => MaterialApp(
         theme: AppTheme.light(),
         home: const HomeScreen(),
