@@ -44,6 +44,28 @@ void main() {
       }
     });
 
+    test('사진 묘사 문항은 사진이나 장면 설명 중 하나를 가진다', () {
+      for (final Question q in questionsOfPart(PartId.describePicture)) {
+        expect(
+          q.imagePath != null || q.scene != null,
+          isTrue,
+          reason: '${q.id} 에 사진(imagePath)도 장면 설명(scene)도 없습니다',
+        );
+      }
+    });
+
+    test('문항 이미지 경로는 에셋 폴더를 가리킨다', () {
+      for (final Question q in kQuestions) {
+        final String? path = q.imagePath;
+        if (path == null) continue;
+        expect(
+          path.startsWith('assets/images/questions/'),
+          isTrue,
+          reason: '${q.id} 의 imagePath 가 에셋 폴더 밖을 가리킵니다: $path',
+        );
+      }
+    });
+
     test('questionById 는 존재하는 id 를 찾고 없는 id 에는 null 을 준다', () {
       expect(questionById(kQuestions.first.id), isNotNull);
       expect(questionById('없는_id'), isNull);

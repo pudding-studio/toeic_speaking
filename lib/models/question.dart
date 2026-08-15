@@ -30,6 +30,7 @@ class Question {
     required this.partId,
     required this.title,
     this.passage,
+    this.imagePath,
     this.scene,
     this.table,
     this.prompts = const <Prompt>[],
@@ -44,7 +45,11 @@ class Question {
   /// Q1-2 에서 읽을 지문.
   final String? passage;
 
-  /// Q3-4 장면 설명.
+  /// Q3-4 사진. 예) 'assets/images/questions/dp_01.jpg'
+  /// 지정하면 [scene] 대신 이 사진을 보여 준다.
+  final String? imagePath;
+
+  /// Q3-4 장면 설명. 사진이 없을 때의 대체 수단.
   final SceneHint? scene;
 
   /// Q8-10 자료.

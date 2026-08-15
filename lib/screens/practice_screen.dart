@@ -376,7 +376,52 @@ class _PracticeScreenState extends State<PracticeScreen> {
       ));
     }
 
-    if (_q.scene != null) {
+    if (_q.imagePath != null) {
+      blocks.add(_SectionCard(
+        title: '사진',
+        color: _color,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: AspectRatio(
+            aspectRatio: 4 / 3,
+            child: Image.asset(
+              _q.imagePath!,
+              fit: BoxFit.cover,
+              // 에셋을 못 찾아도 연습은 계속할 수 있어야 한다.
+              errorBuilder:
+                  (BuildContext context, Object error, StackTrace? _) {
+                return ColoredBox(
+                  color: scheme.surfaceContainerHighest,
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Icon(
+                          Icons.image_not_supported_outlined,
+                          size: 32,
+                          color: scheme.outline,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '사진을 불러오지 못했습니다',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      ));
+    }
+
+    // 사진이 있으면 텍스트 장면 설명은 생략한다.
+    if (_q.scene != null && _q.imagePath == null) {
       blocks.add(_SectionCard(
         title: '사진 상황',
         color: _color,

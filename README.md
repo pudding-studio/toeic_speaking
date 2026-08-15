@@ -129,7 +129,7 @@ firebase deploy --only hosting
 ```bash
 dart format --output=none --set-exit-if-changed .   # 포맷 통과
 flutter analyze                                     # 이슈 없음
-flutter test                                        # 11개 테스트 통과
+flutter test                                        # 17개 테스트 통과
 flutter build web --release                         # 성공
 ```
 
@@ -167,6 +167,8 @@ lib/
     ├── common.dart                카드, 배지, 자료 표, 공략법 시트
     └── countdown_ring.dart        원형 카운트다운
 
+assets/images/questions/           Q3-4 사진 (README 에 규칙 정리)
+
 web/
 ├── index.html                     로딩 표시, 한국어 메타데이터
 ├── flutter_bootstrap.js           CanvasKit 자체 호스팅 설정
@@ -197,6 +199,43 @@ Question(
 
 준비/답변 시간은 파트 기본값을 따르며, 문항별로 다르게 하려면 `prompts` 에 `Prompt` 를
 직접 넣고 `prepSeconds` / `answerSeconds` 를 지정하세요.
+
+### 파트별로 채우는 필드
+
+| 파트 | 필수 | 선택 |
+| --- | --- | --- |
+| Q1-2 | `passage` | `keyExpressions` |
+| Q3-4 | `imagePath` 또는 `scene` | `sampleAnswer`, `keyExpressions` |
+| Q5-7 | `prompts` (3개) | `keyExpressions` |
+| Q8-10 | `table`, `prompts` (3개) | `keyExpressions` |
+| Q11 | `prompts` (1개) | `sampleAnswer` |
+
+`kQuestions` 는 `const` 리스트이므로 문자열 리터럴만 넣을 수 있습니다. 긴 문장은
+인접 리터럴로 이어 붙이세요.
+
+`id` 중복, 시간 누락, 사진 묘사 문항의 자료 누락은 `test/question_bank_test.dart` 가
+검사합니다. 추가 후 `flutter test` 로 확인하세요.
+
+### 사진 묘사 문항에 사진 넣기
+
+1. 이미지를 `assets/images/questions/` 에 넣습니다 (파일명은 문항 id 와 맞추면 편합니다).
+2. 해당 `Question` 에 `imagePath` 를 지정합니다.
+
+```dart
+Question(
+  id: 'dp_01',
+  partId: PartId.describePicture,
+  title: '야외 카페 테라스',
+  imagePath: 'assets/images/questions/dp_01.jpg',
+  sampleAnswer: 'This picture was taken at an outdoor cafe...',
+),
+```
+
+`pubspec.yaml` 에 폴더가 통째로 등록되어 있어서 파일을 개별로 나열할 필요는 없습니다.
+`imagePath` 를 생략하면 `scene` 의 텍스트 장면 설명이 대신 표시되고, 둘 다 있으면
+사진이 우선합니다. 파일을 못 찾아도 화면이 깨지지 않고 안내 문구가 뜹니다.
+
+권장 사양과 저작권 주의사항은 `assets/images/questions/README.md` 에 정리해 두었습니다.
 
 ## 사용 패키지
 
