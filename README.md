@@ -50,13 +50,21 @@ TOEIC Speaking 시험(2021 개정, 11문항)을 파트별로 연습하는 Flutte
 
 ### 지문 읽어주기
 
-브라우저에 내장된 음성 합성(Web Speech API)을 씁니다.
+두 가지 엔진을 쓸 수 있고, 설정(오른쪽 위 톱니바퀴)에서 고릅니다.
 
-- 텍스트가 서버로 전송되지 않고, API 키나 요금이 필요 없습니다.
-- 목소리 품질은 브라우저와 운영체제에 딸린 음성에 따라 다릅니다.
-  Chrome + Windows/macOS 조합이 가장 자연스럽습니다.
+| | 브라우저 내장 음성 | Google Cloud TTS |
+| --- | --- | --- |
+| 자연스러움 | 기계적인 편 | 사람 목소리에 가까움 (Neural2) |
+| 준비 | 없음 (기본값) | 본인 API 키 입력 |
+| 요금 | 없음 | 월 100만 자까지 무료 |
+
+**API 키는 앱에 포함되어 있지 않습니다.** 각자 자기 키를 넣고, 그 키는 그 사람의
+브라우저에만 저장됩니다. 설정 화면에 키 만드는 절차와 제한 거는 법이 정리되어 있습니다.
+
+- **한 번 만든 음성은 저장됩니다.** 같은 지문·음성·속도면 API 를 다시 부르지 않으므로
+  요금은 처음 한 번만 발생합니다. 설정에서 저장된 개수를 보고 비울 수 있습니다.
+- Google 호출이 실패하면 브라우저 내장 음성으로 대신 읽고, 실패 이유를 안내합니다.
 - 녹음이 시작되면 자동으로 멈춥니다. 읽어주기 소리가 답변 녹음에 섞이면 안 되기 때문입니다.
-- 음성 합성을 지원하지 않는 브라우저에서는 버튼 대신 안내 문구가 표시됩니다.
 
 ### 앱에서 등록한 문항
 
@@ -154,7 +162,7 @@ firebase deploy --only hosting
 ```bash
 dart format --output=none --set-exit-if-changed .   # 포맷 통과
 flutter analyze                                     # 이슈 없음
-flutter test                                        # 25개 테스트 통과
+flutter test                                        # 31개 테스트 통과
 flutter build web --release                         # 성공
 ```
 
@@ -179,7 +187,8 @@ lib/
 │   └── question_bank.dart         파트별 연습 문항 데이터
 ├── services/
 │   ├── recorder_service.dart      마이크 녹음 → data URL 변환
-│   ├── tts_service.dart           지문 읽어주기(Web Speech API)
+│   ├── tts_service.dart           읽어주기(Google TTS / 브라우저) + 캐시
+│   ├── settings_store.dart        API 키·음성 설정
 │   ├── local_storage.dart         IndexedDB (녹음 / 등록한 문항)
 │   ├── playback_service.dart      재생(재생 시점에 오디오 로드)
 │   ├── attempt_store.dart         녹음 목록 상태
@@ -190,6 +199,7 @@ lib/
 │   ├── part_tab.dart              파트별 문항 목록 + 등록 버튼
 │   ├── practice_screen.dart       준비→녹음→저장 진행 화면
 │   ├── question_editor_screen.dart  문항 등록·수정 폼
+│   ├── settings_screen.dart       읽어주기 설정 · API 키
 │   └── recording_list.dart        녹음 타일 / "녹음 기록" 탭
 └── widgets/
     ├── common.dart                카드, 배지, 자료 표, 공략법 시트
@@ -279,6 +289,6 @@ Question(
 
 ## 사용 패키지
 
-`record`(녹음) · `audioplayers`(재생) · `flutter_tts`(읽어주기) ·
-`idb_shim`(IndexedDB) · `image_picker`(사진 선택) · `http`(blob → 바이트) ·
-`intl`(날짜 표시)
+`record`(녹음) · `audioplayers`(재생·음성 출력) · `flutter_tts`(브라우저 읽어주기) ·
+`idb_shim`(IndexedDB) · `image_picker`(사진 선택) · `http`(HTTP 호출) ·
+`crypto`(캐시 키) · `intl`(날짜 표시)

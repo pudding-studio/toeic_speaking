@@ -8,6 +8,7 @@ import '../services/playback_service.dart';
 import '../theme.dart';
 import 'overview_tab.dart';
 import 'part_tab.dart';
+import 'settings_screen.dart';
 import 'recording_list.dart';
 
 /// 상단에 가로 스크롤 탭을 두고, 탭마다 파트 화면을 보여 주는 메인 화면.
@@ -72,6 +73,17 @@ class _HomeScreenState extends State<HomeScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('TOEIC Speaking 연습'),
+        actions: <Widget>[
+          IconButton(
+            tooltip: '설정',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (BuildContext context) => const SettingsScreen(),
+              ),
+            ),
+            icon: const Icon(Icons.settings_outlined),
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(50),
           child: DecoratedBox(

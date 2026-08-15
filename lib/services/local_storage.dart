@@ -20,12 +20,14 @@ class LocalStorage {
 
   static const String _dbName = 'toeic_speaking';
 
-  /// v2 에서 문항 스토어를 추가했다. 기존 녹음은 그대로 유지된다.
-  static const int _dbVersion = 2;
+  /// v3 에서 설정과 음성 캐시 스토어를 추가했다. 기존 데이터는 그대로 유지된다.
+  static const int _dbVersion = 3;
   static const String _attemptStore = 'attempts';
   static const String _audioStore = 'audio';
   static const String _questionStore = 'questions';
   static const String _questionImageStore = 'questionImages';
+  static const String _settingsStore = 'settings';
+  static const String _ttsCacheStore = 'ttsCache';
 
   Database? _db;
   Future<Database?>? _opening;
@@ -63,6 +65,12 @@ class LocalStorage {
           }
           if (!db.objectStoreNames.contains(_questionImageStore)) {
             db.createObjectStore(_questionImageStore);
+          }
+          if (!db.objectStoreNames.contains(_settingsStore)) {
+            db.createObjectStore(_settingsStore);
+          }
+          if (!db.objectStoreNames.contains(_ttsCacheStore)) {
+            db.createObjectStore(_ttsCacheStore);
           }
         },
       );
@@ -238,6 +246,96 @@ class LocalStorage {
     if (value is ByteBuffer) return value.asUint8List();
     if (value is List<int>) return Uint8List.fromList(value);
     return null;
+  }
+
+  // ─────────────────────────── 설정 ───────────────────────────
+
+  Future<String?> loadSetting(String key) async {
+    final Database? db = await open();
+    if (db == null) return null;
+    try {
+      final Transaction txn = db.transaction(_settingsStore, idbModeReadOnly);
+      final Object? value =
+          await txn.objectStore(_settingsStore).getObject(key);
+      await txn.completed;
+      return value is String ? value : null;
+    } on Object catch (e) {
+      debugPrint('설정을 읽지 못했습니다: $e');
+      return null;
+    }
+  }
+
+  Future<void> saveSetting(String key, String? value) async {
+    final Database? db = await open();
+    if (db == null) return;
+    try {
+      final Transaction txn = db.transaction(_settingsStore, idbModeReadWrite);
+      if (value == null) {
+        await txn.objectStore(_settingsStore).delete(key);
+      } else {
+        await txn.objectStore(_settingsStore).put(value, key);
+      }
+      await txn.completed;
+    } on Object catch (e) {
+      debugPrint('설정을 저장하지 못했습니다: $e');
+    }
+  }
+
+  // ─────────────────────── 읽어주기 음성 캐시 ───────────────────────
+
+  /// 이미 만들어 둔 음성. 있으면 API 를 다시 부르지 않는다.
+  Future<Uint8List?> loadTtsAudio(String key) async {
+    final Database? db = await open();
+    if (db == null) return null;
+    try {
+      final Transaction txn = db.transaction(_ttsCacheStore, idbModeReadOnly);
+      final Object? value =
+          await txn.objectStore(_ttsCacheStore).getObject(key);
+      await txn.completed;
+      return _asBytes(value);
+    } on Object catch (e) {
+      debugPrint('음성 캐시를 읽지 못했습니다: $e');
+      return null;
+    }
+  }
+
+  Future<void> saveTtsAudio(String key, Uint8List bytes) async {
+    final Database? db = await open();
+    if (db == null) return;
+    try {
+      final Transaction txn = db.transaction(_ttsCacheStore, idbModeReadWrite);
+      await txn.objectStore(_ttsCacheStore).put(bytes, key);
+      await txn.completed;
+    } on Object catch (e) {
+      debugPrint('음성 캐시를 저장하지 못했습니다: $e');
+    }
+  }
+
+  /// 캐시에 들어 있는 음성 개수.
+  Future<int> ttsCacheCount() async {
+    final Database? db = await open();
+    if (db == null) return 0;
+    try {
+      final Transaction txn = db.transaction(_ttsCacheStore, idbModeReadOnly);
+      final int count = await txn.objectStore(_ttsCacheStore).count();
+      await txn.completed;
+      return count;
+    } on Object catch (e) {
+      debugPrint('음성 캐시 개수를 세지 못했습니다: $e');
+      return 0;
+    }
+  }
+
+  Future<void> clearTtsCache() async {
+    final Database? db = await open();
+    if (db == null) return;
+    try {
+      final Transaction txn = db.transaction(_ttsCacheStore, idbModeReadWrite);
+      await txn.objectStore(_ttsCacheStore).clear();
+      await txn.completed;
+    } on Object catch (e) {
+      debugPrint('음성 캐시를 비우지 못했습니다: $e');
+    }
   }
 
   Future<void> clear() async {

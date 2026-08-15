@@ -43,10 +43,11 @@ class TtsControls extends StatelessWidget {
         }
 
         final bool speaking = tts.isSpeakingText(text);
+        final bool loading = tts.isLoadingText(text);
         return Row(
           children: <Widget>[
             FilledButton.tonalIcon(
-              onPressed: enabled ? () => tts.toggle(text) : null,
+              onPressed: enabled && !loading ? () => tts.toggle(text) : null,
               style: FilledButton.styleFrom(
                 minimumSize: const Size(0, 40),
                 backgroundColor: color.withValues(alpha: 0.12),
@@ -57,11 +58,26 @@ class TtsControls extends StatelessWidget {
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              icon: Icon(
-                speaking ? Icons.stop_rounded : Icons.volume_up_rounded,
-                size: 20,
+              icon: loading
+                  ? SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: color,
+                      ),
+                    )
+                  : Icon(
+                      speaking ? Icons.stop_rounded : Icons.volume_up_rounded,
+                      size: 20,
+                    ),
+              label: Text(
+                loading
+                    ? '만드는 중'
+                    : speaking
+                        ? '정지'
+                        : '들어보기',
               ),
-              label: Text(speaking ? '정지' : '들어보기'),
             ),
             const SizedBox(width: 10),
             _SpeedToggle(
@@ -70,11 +86,14 @@ class TtsControls extends StatelessWidget {
               onChanged: enabled ? (bool slow) => tts.setSlow(slow) : null,
             ),
             const Spacer(),
-            if (!enabled)
-              Text(
-                '녹음 중에는 멈춤',
-                style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
-              ),
+            Text(
+              !enabled
+                  ? '녹음 중에는 멈춤'
+                  : tts.engine == TtsEngine.google
+                      ? 'Google 음성'
+                      : '브라우저 음성',
+              style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
+            ),
           ],
         );
       },
