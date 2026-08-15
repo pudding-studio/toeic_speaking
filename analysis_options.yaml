@@ -1,0 +1,21 @@
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    - always_declare_return_types
+    - prefer_const_constructors
+    - prefer_const_declarations
+    - prefer_final_locals
+    - unawaited_futures
+
+analyzer:
+  errors:
+    todo: ignore
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
