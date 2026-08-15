@@ -9,9 +9,11 @@ import '../models/toeic_part.dart';
 import '../services/attempt_store.dart';
 import '../services/playback_service.dart';
 import '../services/recorder_service.dart';
+import '../services/tts_service.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/countdown_ring.dart';
+import '../widgets/tts_controls.dart';
 import 'recording_list.dart';
 
 enum _Phase { ready, prep, answering, stepDone, finished }
@@ -49,6 +51,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
   @override
   void dispose() {
     _timer?.cancel();
+    unawaited(TtsService.instance.stop());
     // 화면을 벗어날 때 진행 중인 녹음은 버린다.
     if (_phase == _Phase.answering) {
       unawaited(RecorderService.instance.cancel());
@@ -118,6 +121,8 @@ class _PracticeScreenState extends State<PracticeScreen> {
     if (_busy) return;
     _busy = true;
     _stopCountdown();
+    // 읽어주기 소리가 녹음에 섞이지 않도록 먼저 멈춘다.
+    await TtsService.instance.stop();
     final bool started = await RecorderService.instance.start();
     _busy = false;
     if (!mounted) return;
@@ -369,9 +374,23 @@ class _PracticeScreenState extends State<PracticeScreen> {
       blocks.add(_SectionCard(
         title: '읽을 지문',
         color: _color,
-        child: SelectableText(
-          _q.passage!,
-          style: const TextStyle(fontSize: 17, height: 1.75),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            SelectableText(
+              _q.passage!,
+              style: const TextStyle(fontSize: 17, height: 1.75),
+            ),
+            const SizedBox(height: 14),
+            const Divider(height: 1),
+            const SizedBox(height: 12),
+            // 녹음 중에는 읽어주기 소리가 마이크로 들어가므로 막는다.
+            TtsControls(
+              text: _q.passage!,
+              color: _color,
+              enabled: _phase != _Phase.answering,
+            ),
+          ],
         ),
       ));
     }

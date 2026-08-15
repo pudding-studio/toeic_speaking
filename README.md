@@ -31,6 +31,8 @@ TOEIC Speaking 시험(2021 개정, 11문항)을 파트별로 연습하는 Flutte
   Q5-7 / Q8-10 처럼 하위 문항이 여러 개면 문항마다 따로 저장됩니다.
   마이크 권한은 준비 시간이 시작되기 전에 미리 확인하므로 권한 창 때문에 시간을 까먹지 않습니다.
 - **바로 듣기** — 연습이 끝나면 그 자리에서 재생하고, "녹음 기록" 탭에 모두 모입니다.
+- **지문 읽어주기 (Q1-2)** — 낭독 지문을 브라우저 음성으로 들어 보며 발음을 확인할 수 있습니다.
+  보통 / 느리게 두 속도를 제공하고, 녹음 중에는 소리가 마이크에 섞이지 않도록 자동으로 멈춥니다.
 - **파트별 공략법** — 채점 포인트와 바로 쓰는 답변 템플릿을 바텀시트로 제공합니다.
 - **문항 자료** — 낭독 지문, 사진 상황 설명, 일정표 자료, 핵심 표현, 일부 문항의 모범 답안.
 - **학습 통계** — 총 녹음 수 / 총 발화 시간 / 연습한 날짜 수.
@@ -45,6 +47,16 @@ TOEIC Speaking 시험(2021 개정, 11문항)을 파트별로 연습하는 Flutte
 - `record` 가 MediaRecorder(WebM/Opus)로 녹음 → blob URL → base64 data URL 로 바꿔 저장합니다.
 - 목록에는 메타데이터만 읽고, 실제 오디오는 재생할 때만 꺼내옵니다.
 - 시크릿 모드 등으로 IndexedDB 를 쓸 수 없으면 그 세션 동안만 유지되며, 안내 문구가 표시됩니다.
+
+### 지문 읽어주기
+
+브라우저에 내장된 음성 합성(Web Speech API)을 씁니다.
+
+- 텍스트가 서버로 전송되지 않고, API 키나 요금이 필요 없습니다.
+- 목소리 품질은 브라우저와 운영체제에 딸린 음성에 따라 다릅니다.
+  Chrome + Windows/macOS 조합이 가장 자연스럽습니다.
+- 녹음이 시작되면 자동으로 멈춥니다. 읽어주기 소리가 답변 녹음에 섞이면 안 되기 때문입니다.
+- 음성 합성을 지원하지 않는 브라우저에서는 버튼 대신 안내 문구가 표시됩니다.
 
 ### 앱에서 등록한 문항
 
@@ -142,7 +154,7 @@ firebase deploy --only hosting
 ```bash
 dart format --output=none --set-exit-if-changed .   # 포맷 통과
 flutter analyze                                     # 이슈 없음
-flutter test                                        # 22개 테스트 통과
+flutter test                                        # 25개 테스트 통과
 flutter build web --release                         # 성공
 ```
 
@@ -167,6 +179,7 @@ lib/
 │   └── question_bank.dart         파트별 연습 문항 데이터
 ├── services/
 │   ├── recorder_service.dart      마이크 녹음 → data URL 변환
+│   ├── tts_service.dart           지문 읽어주기(Web Speech API)
 │   ├── local_storage.dart         IndexedDB (녹음 / 등록한 문항)
 │   ├── playback_service.dart      재생(재생 시점에 오디오 로드)
 │   ├── attempt_store.dart         녹음 목록 상태
@@ -180,6 +193,7 @@ lib/
 │   └── recording_list.dart        녹음 타일 / "녹음 기록" 탭
 └── widgets/
     ├── common.dart                카드, 배지, 자료 표, 공략법 시트
+    ├── tts_controls.dart          들어보기 · 속도 조절
     └── countdown_ring.dart        원형 카운트다운
 
 assets/images/questions/           Q3-4 사진 (README 에 규칙 정리)
@@ -265,5 +279,6 @@ Question(
 
 ## 사용 패키지
 
-`record`(녹음) · `audioplayers`(재생) · `idb_shim`(IndexedDB) ·
-`image_picker`(사진 선택) · `http`(blob → 바이트) · `intl`(날짜 표시)
+`record`(녹음) · `audioplayers`(재생) · `flutter_tts`(읽어주기) ·
+`idb_shim`(IndexedDB) · `image_picker`(사진 선택) · `http`(blob → 바이트) ·
+`intl`(날짜 표시)

@@ -17,6 +17,7 @@ dependencies:
   http: ^1.2.2 # blob URL → 바이트 변환
   intl: ^0.19.0
   image_picker: ^1.2.3
+  flutter_tts: ^4.2.5
 
 dev_dependencies:
   flutter_test:
