@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../models/attempt.dart';
 import '../models/toeic_part.dart';
-import 'recording_storage.dart';
+import 'local_storage.dart';
 
 /// 녹음 기록 목록을 들고 있는 저장소.
 /// 메타데이터는 메모리에, 오디오는 IndexedDB 에 둔다.
@@ -18,12 +18,12 @@ class AttemptStore extends ChangeNotifier {
   bool get isLoaded => _loaded;
 
   /// IndexedDB 를 못 쓰는 브라우저(시크릿 모드 등)에서는 새로고침 시 기록이 사라진다.
-  bool get isPersistent => RecordingStorage.instance.isAvailable;
+  bool get isPersistent => LocalStorage.instance.isAvailable;
 
   Future<void> load() async {
     if (_loaded) return;
     _loaded = true;
-    final List<String> raw = await RecordingStorage.instance.loadAttemptJson();
+    final List<String> raw = await LocalStorage.instance.loadAttemptJson();
     _attempts
       ..clear()
       ..addAll(raw.map(Attempt.fromJson).whereType<Attempt>());
@@ -35,7 +35,7 @@ class AttemptStore extends ChangeNotifier {
     _attempts.insert(0, attempt);
     _sort();
     notifyListeners();
-    await RecordingStorage.instance.saveAttempt(
+    await LocalStorage.instance.saveAttempt(
       id: attempt.id,
       attemptJson: attempt.toJson(),
       audioDataUrl: audioDataUrl,
@@ -45,13 +45,13 @@ class AttemptStore extends ChangeNotifier {
   Future<void> remove(Attempt attempt) async {
     _attempts.removeWhere((Attempt a) => a.id == attempt.id);
     notifyListeners();
-    await RecordingStorage.instance.delete(attempt.id);
+    await LocalStorage.instance.delete(attempt.id);
   }
 
   Future<void> clearAll() async {
     _attempts.clear();
     notifyListeners();
-    await RecordingStorage.instance.clear();
+    await LocalStorage.instance.clear();
   }
 
   List<Attempt> ofQuestion(String questionId) => _attempts

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../data/question_bank.dart';
 import '../models/attempt.dart';
 import '../models/toeic_part.dart';
 import '../services/attempt_store.dart';
+import '../services/question_store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import 'recording_list.dart';
@@ -20,7 +20,9 @@ class OverviewTab extends StatelessWidget {
     final ColorScheme scheme = Theme.of(context).colorScheme;
 
     return AnimatedBuilder(
-      animation: AttemptStore.instance,
+      animation: Listenable.merge(
+        <Listenable>[AttemptStore.instance, QuestionStore.instance],
+      ),
       builder: (BuildContext context, Widget? _) {
         final AttemptStore store = AttemptStore.instance;
         final List<Attempt> recent = store.attempts.take(3).toList();
@@ -45,7 +47,7 @@ class OverviewTab extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 10),
                 child: _PartTile(
                   part: part,
-                  questionCount: questionsOfPart(part.id).length,
+                  questionCount: QuestionStore.instance.ofPart(part.id).length,
                   attemptCount: store.countOfPart(part.id),
                   onTap: () => onSelectPart(part.id),
                 ),

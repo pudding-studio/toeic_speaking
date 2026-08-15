@@ -1,7 +1,7 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 
-import 'recording_storage.dart';
+import 'local_storage.dart';
 
 /// 녹음 재생 담당. 한 번에 하나만 재생한다.
 /// 오디오는 재생 직전에 IndexedDB 에서 꺼내 온다.
@@ -57,8 +57,8 @@ class PlaybackService extends ChangeNotifier {
     _duration = Duration.zero;
     notifyListeners();
 
-    final String? dataUrl = _cache[attemptId] ??
-        await RecordingStorage.instance.loadAudio(attemptId);
+    final String? dataUrl =
+        _cache[attemptId] ?? await LocalStorage.instance.loadAudio(attemptId);
     if (dataUrl == null) {
       debugPrint('재생할 오디오를 찾지 못했습니다: $attemptId');
       _loadingId = null;

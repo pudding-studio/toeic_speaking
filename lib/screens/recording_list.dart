@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../data/question_bank.dart';
 import '../models/attempt.dart';
 import '../models/question.dart';
 import '../services/attempt_store.dart';
 import '../services/playback_service.dart';
+import '../services/question_store.dart';
 import '../theme.dart';
 
 final DateFormat _dateFormat = DateFormat('yyyy.MM.dd HH:mm');
@@ -27,7 +27,7 @@ class AttemptTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final Color color = AppTheme.partColor(attempt.partId);
-    final Question? question = questionById(attempt.questionId);
+    final Question? question = QuestionStore.instance.byId(attempt.questionId);
 
     return AnimatedBuilder(
       animation: PlaybackService.instance,

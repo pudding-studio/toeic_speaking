@@ -34,6 +34,8 @@ TOEIC Speaking 시험(2021 개정, 11문항)을 파트별로 연습하는 Flutte
 - **파트별 공략법** — 채점 포인트와 바로 쓰는 답변 템플릿을 바텀시트로 제공합니다.
 - **문항 자료** — 낭독 지문, 사진 상황 설명, 일정표 자료, 핵심 표현, 일부 문항의 모범 답안.
 - **학습 통계** — 총 녹음 수 / 총 발화 시간 / 연습한 날짜 수.
+- **문항 직접 등록** — 코드를 고치지 않고 앱 화면에서 문항을 추가·수정·삭제할 수 있습니다.
+  사진 묘사 문항은 사진을 직접 올릴 수 있습니다. 등록한 문항은 이 브라우저에만 저장됩니다.
 
 ### 녹음 저장 방식
 
@@ -43,6 +45,17 @@ TOEIC Speaking 시험(2021 개정, 11문항)을 파트별로 연습하는 Flutte
 - `record` 가 MediaRecorder(WebM/Opus)로 녹음 → blob URL → base64 data URL 로 바꿔 저장합니다.
 - 목록에는 메타데이터만 읽고, 실제 오디오는 재생할 때만 꺼내옵니다.
 - 시크릿 모드 등으로 IndexedDB 를 쓸 수 없으면 그 세션 동안만 유지되며, 안내 문구가 표시됩니다.
+
+### 앱에서 등록한 문항
+
+파트 탭 맨 아래 "○○ 문항 직접 등록" 버튼으로 문항을 만들 수 있습니다.
+
+- 파트에 따라 필요한 입력만 나옵니다 (낭독 지문 / 사진·장면 설명 / 질문·시간 / 자료 표).
+- 등록한 문항은 목록에서 "내 문항" 배지가 붙고, 오른쪽 메뉴로 수정·삭제할 수 있습니다.
+- 기본 제공 문항은 코드에 있으므로 앱에서 수정·삭제되지 않습니다.
+- **녹음과 마찬가지로 이 브라우저에만 저장됩니다.** 다른 기기나 다른 사람에게는 보이지
+  않고, 브라우저 데이터를 지우면 사라집니다. 모두에게 보여야 하는 문항은
+  `lib/data/question_bank.dart` 에 넣고 배포하세요.
 
 ### 브라우저 요구사항
 
@@ -129,7 +142,7 @@ firebase deploy --only hosting
 ```bash
 dart format --output=none --set-exit-if-changed .   # 포맷 통과
 flutter analyze                                     # 이슈 없음
-flutter test                                        # 17개 테스트 통과
+flutter test                                        # 22개 테스트 통과
 flutter build web --release                         # 성공
 ```
 
@@ -154,14 +167,16 @@ lib/
 │   └── question_bank.dart         파트별 연습 문항 데이터
 ├── services/
 │   ├── recorder_service.dart      마이크 녹음 → data URL 변환
-│   ├── recording_storage.dart     IndexedDB 저장(메타데이터/오디오 분리)
+│   ├── local_storage.dart         IndexedDB (녹음 / 등록한 문항)
 │   ├── playback_service.dart      재생(재생 시점에 오디오 로드)
-│   └── attempt_store.dart         녹음 목록 상태
+│   ├── attempt_store.dart         녹음 목록 상태
+│   └── question_store.dart        기본 문항 + 등록한 문항 병합
 ├── screens/
 │   ├── home_screen.dart           가로 스크롤 탭 + TabBarView
 │   ├── overview_tab.dart          "전체" 탭
-│   ├── part_tab.dart              파트별 문항 목록
+│   ├── part_tab.dart              파트별 문항 목록 + 등록 버튼
 │   ├── practice_screen.dart       준비→녹음→저장 진행 화면
+│   ├── question_editor_screen.dart  문항 등록·수정 폼
 │   └── recording_list.dart        녹음 타일 / "녹음 기록" 탭
 └── widgets/
     ├── common.dart                카드, 배지, 자료 표, 공략법 시트
@@ -183,6 +198,17 @@ firebase.json                      Hosting 설정(캐시 헤더, SPA 라우팅)
 ```
 
 ## 문항 추가하기
+
+방법이 두 가지입니다.
+
+| | 앱에서 등록 | 코드에 추가 |
+| --- | --- | --- |
+| 보이는 범위 | 등록한 브라우저에서만 | 배포하면 모든 사용자 |
+| 방법 | 파트 탭 → "문항 직접 등록" | `lib/data/question_bank.dart` 편집 |
+| 사진 | 앱에서 업로드 | `assets/images/questions/` 에 파일 추가 |
+| 배포 필요 | 없음 | 커밋 → CI 배포 |
+
+아래는 **코드에 추가**하는 방법입니다.
 
 `lib/data/question_bank.dart` 의 `kQuestions` 에 `Question` 을 추가하면 해당 파트 탭에
 자동으로 나타납니다. 화면 코드는 손대지 않아도 됩니다.
@@ -240,4 +266,4 @@ Question(
 ## 사용 패키지
 
 `record`(녹음) · `audioplayers`(재생) · `idb_shim`(IndexedDB) ·
-`http`(blob → 바이트) · `intl`(날짜 표시)
+`image_picker`(사진 선택) · `http`(blob → 바이트) · `intl`(날짜 표시)

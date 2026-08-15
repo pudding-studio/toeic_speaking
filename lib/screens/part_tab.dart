@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 
-import '../data/question_bank.dart';
 import '../models/question.dart';
 import '../models/toeic_part.dart';
 import '../services/attempt_store.dart';
+import '../services/question_store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import 'practice_screen.dart';
+import 'question_editor_screen.dart';
 
 /// 파트 하나에 해당하는 탭 화면.
 class PartTab extends StatelessWidget {
@@ -14,14 +15,32 @@ class PartTab extends StatelessWidget {
 
   final ToeicPart part;
 
+  Future<void> _openEditor(BuildContext context, {Question? existing}) async {
+    final bool? saved = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (BuildContext context) => QuestionEditorScreen(
+          partId: part.id,
+          existing: existing,
+        ),
+      ),
+    );
+    if ((saved ?? false) && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('문항을 저장했습니다.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final List<Question> questions = questionsOfPart(part.id);
     final Color color = AppTheme.partColor(part.id);
 
     return AnimatedBuilder(
-      animation: AttemptStore.instance,
+      animation: Listenable.merge(
+        <Listenable>[AttemptStore.instance, QuestionStore.instance],
+      ),
       builder: (BuildContext context, Widget? _) {
+        final List<Question> questions = QuestionStore.instance.ofPart(part.id);
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
           children: <Widget>[
@@ -59,13 +78,46 @@ class PartTab extends StatelessWidget {
                           PracticeScreen(question: q),
                     ),
                   ),
+                  onEdit: q.isCustom
+                      ? () => _openEditor(context, existing: q)
+                      : null,
+                  onDelete:
+                      q.isCustom ? () => _confirmDelete(context, q) : null,
                 ),
               ),
+            const SizedBox(height: 4),
+            OutlinedButton.icon(
+              onPressed: () => _openEditor(context),
+              style: OutlinedButton.styleFrom(foregroundColor: color),
+              icon: const Icon(Icons.add),
+              label: Text('${part.shortTitle} 문항 직접 등록'),
+            ),
           ],
         );
       },
     );
   }
+}
+
+Future<void> _confirmDelete(BuildContext context, Question question) async {
+  final bool? ok = await showDialog<bool>(
+    context: context,
+    builder: (BuildContext context) => AlertDialog(
+      title: const Text('문항 삭제'),
+      content: Text('"${question.title}" 을(를) 삭제합니다. 되돌릴 수 없습니다.'),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: const Text('취소'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(true),
+          child: const Text('삭제'),
+        ),
+      ],
+    ),
+  );
+  if (ok ?? false) await QuestionStore.instance.remove(question);
 }
 
 class _PartHeader extends StatelessWidget {

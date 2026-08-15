@@ -1,7 +1,10 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 
 import '../models/question.dart';
 import '../models/toeic_part.dart';
+import '../services/question_store.dart';
 import '../theme.dart';
 
 /// 파트 색을 쓰는 작은 배지.
@@ -64,11 +67,17 @@ class QuestionCard extends StatelessWidget {
     required this.question,
     required this.attemptCount,
     required this.onTap,
+    this.onEdit,
+    this.onDelete,
   });
 
   final Question question;
   final int attemptCount;
   final VoidCallback onTap;
+
+  /// 앱에서 등록한 문항일 때만 넘어온다.
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -96,12 +105,41 @@ class QuestionCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Text(
-                    question.title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  Row(
+                    children: <Widget>[
+                      Flexible(
+                        child: Text(
+                          question.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      if (question.isCustom) ...<Widget>[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: color.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            '내 문항',
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w800,
+                              color: color,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                   const SizedBox(height: 5),
                   Row(
@@ -151,7 +189,29 @@ class QuestionCard extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(Icons.chevron_right, color: scheme.outline),
+            if (onEdit == null && onDelete == null)
+              Icon(Icons.chevron_right, color: scheme.outline)
+            else
+              PopupMenuButton<String>(
+                tooltip: '문항 관리',
+                icon: Icon(Icons.more_vert, color: scheme.outline),
+                onSelected: (String value) {
+                  if (value == 'edit') onEdit?.call();
+                  if (value == 'delete') onDelete?.call();
+                },
+                itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                  if (onEdit != null)
+                    const PopupMenuItem<String>(
+                      value: 'edit',
+                      child: Text('수정'),
+                    ),
+                  if (onDelete != null)
+                    const PopupMenuItem<String>(
+                      value: 'delete',
+                      child: Text('삭제'),
+                    ),
+                ],
+              ),
           ],
         ),
       ),
@@ -359,6 +419,99 @@ class _SheetSectionTitle extends StatelessWidget {
           style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
         ),
       ],
+    );
+  }
+}
+
+/// 문항 사진. 기본 문항은 에셋에서, 앱에서 등록한 문항은 브라우저 저장소에서 읽는다.
+/// 사진이 없거나 읽지 못하면 안내 문구를 대신 보여 주고 연습은 그대로 진행된다.
+class QuestionImage extends StatelessWidget {
+  const QuestionImage({super.key, required this.question});
+
+  final Question question;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: AspectRatio(
+        aspectRatio: 4 / 3,
+        child: question.isCustom
+            ? FutureBuilder<Uint8List?>(
+                future: QuestionStore.instance.imageOf(question.id),
+                builder: (
+                  BuildContext context,
+                  AsyncSnapshot<Uint8List?> snapshot,
+                ) {
+                  if (snapshot.connectionState != ConnectionState.done) {
+                    return const _ImageLoading();
+                  }
+                  final Uint8List? bytes = snapshot.data;
+                  if (bytes == null) return const _ImageUnavailable();
+                  return Image.memory(
+                    bytes,
+                    fit: BoxFit.cover,
+                    errorBuilder:
+                        (BuildContext context, Object _, StackTrace? __) =>
+                            const _ImageUnavailable(),
+                  );
+                },
+              )
+            : Image.asset(
+                question.imagePath!,
+                fit: BoxFit.cover,
+                errorBuilder:
+                    (BuildContext context, Object _, StackTrace? __) =>
+                        const _ImageUnavailable(),
+              ),
+      ),
+    );
+  }
+}
+
+class _ImageLoading extends StatelessWidget {
+  const _ImageLoading();
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      child: const Center(
+        child: SizedBox(
+          width: 22,
+          height: 22,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      ),
+    );
+  }
+}
+
+class _ImageUnavailable extends StatelessWidget {
+  const _ImageUnavailable();
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    return ColoredBox(
+      color: scheme.surfaceContainerHighest,
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Icon(
+              Icons.image_not_supported_outlined,
+              size: 32,
+              color: scheme.outline,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '사진을 불러오지 못했습니다',
+              style: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

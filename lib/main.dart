@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 
 import 'screens/home_screen.dart';
 import 'services/attempt_store.dart';
+import 'services/question_store.dart';
 import 'theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await QuestionStore.instance.load();
   await AttemptStore.instance.load();
   runApp(const ToeicSpeakingApp());
 }
