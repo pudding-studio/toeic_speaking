@@ -82,7 +82,8 @@ const List<ToeicPart> kToeicParts = <ToeicPart>[
     shortTitle: '사진 묘사',
     questionRange: 'Q3-4',
     englishTitle: 'Describe a picture',
-    description: '한 장의 사진을 30초 동안 묘사합니다. 장소 → 중심 인물 → 주변 인물 → 배경 순서로 말하면 안정적입니다.',
+    description:
+        '한 장의 사진을 30초 동안 묘사합니다. 장소 → 중심 인물 → 주변 인물 → 배경 순서로 말하면 안정적입니다.',
     defaultPrepSeconds: 45,
     defaultAnswerSeconds: 30,
     tips: <String>[
@@ -107,7 +108,8 @@ const List<ToeicPart> kToeicParts = <ToeicPart>[
     shortTitle: '듣고 답하기',
     questionRange: 'Q5-7',
     englishTitle: 'Respond to questions',
-    description: '전화 인터뷰 상황에서 세 개의 질문에 답합니다. 준비 시간이 3초뿐이므로 즉답 패턴을 외워 두는 것이 핵심입니다.',
+    description:
+        '전화 인터뷰 상황에서 세 개의 질문에 답합니다. 준비 시간이 3초뿐이므로 즉답 패턴을 외워 두는 것이 핵심입니다.',
     defaultPrepSeconds: 3,
     defaultAnswerSeconds: 15,
     tips: <String>[
@@ -153,7 +155,8 @@ const List<ToeicPart> kToeicParts = <ToeicPart>[
     shortTitle: '의견 제시',
     questionRange: 'Q11',
     englishTitle: 'Express an opinion',
-    description: '찬반 또는 선택형 주제에 대해 60초 동안 자신의 의견을 말합니다. 서론-본론-결론 구조가 그대로 점수입니다.',
+    description:
+        '찬반 또는 선택형 주제에 대해 60초 동안 자신의 의견을 말합니다. 서론-본론-결론 구조가 그대로 점수입니다.',
     defaultPrepSeconds: 45,
     defaultAnswerSeconds: 60,
     tips: <String>[

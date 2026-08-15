@@ -58,8 +58,9 @@ class AttemptStore extends ChangeNotifier {
       .where((Attempt a) => a.questionId == questionId)
       .toList(growable: false);
 
-  List<Attempt> ofPart(PartId partId) =>
-      _attempts.where((Attempt a) => a.partId == partId).toList(growable: false);
+  List<Attempt> ofPart(PartId partId) => _attempts
+      .where((Attempt a) => a.partId == partId)
+      .toList(growable: false);
 
   int countOfPart(PartId partId) =>
       _attempts.where((Attempt a) => a.partId == partId).length;

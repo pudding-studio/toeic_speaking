@@ -60,20 +60,63 @@ flutter run -d chrome          # 개발
 flutter build web --release    # 배포용 번들 → build/web
 ```
 
-## Firebase Hosting 배포
+## 배포
+
+### 자동 배포 (GitHub Actions)
+
+기본 브랜치에 푸시되면 자동으로 검증 → 빌드 → Firebase Hosting 라이브 채널 배포까지
+진행됩니다. 처음 한 번만 아래 설정이 필요합니다.
+
+**1. Firebase 서비스 계정 만들기**
 
 ```bash
 npm install -g firebase-tools
 firebase login
-firebase use --add                # Firebase 프로젝트 선택 → .firebaserc 생성
+firebase init hosting:github    # 저장소를 연결하면 서비스 계정과 시크릿을 자동 생성
+```
+
+`firebase init hosting:github` 는 서비스 계정을 만들고 GitHub 시크릿까지 넣어 주지만,
+워크플로 파일도 새로 만들려고 합니다. **워크플로를 덮어쓰겠냐고 물으면 거절하세요**
+(이 저장소에 이미 있습니다). 수동으로 하려면 Firebase 콘솔 → 프로젝트 설정 →
+서비스 계정에서 키(JSON)를 만들고 `Firebase Hosting 관리자` 역할을 부여하세요.
+
+**2. GitHub 저장소에 값 등록** (Settings → Secrets and variables → Actions)
+
+| 종류 | 이름 | 값 |
+| --- | --- | --- |
+| Secret | `FIREBASE_SERVICE_ACCOUNT` | 서비스 계정 JSON **전체 내용** |
+| Variable | `FIREBASE_PROJECT_ID` | Firebase 프로젝트 ID (예: `toeic-speaking-app`) |
+
+둘 중 하나라도 없으면 배포를 **건너뛰고** 어떤 값이 빠졌는지 실행 요약에 남깁니다
+(실패로 처리하지 않으므로, 설정 전에는 워크플로가 빨갛게 뜨지 않습니다).
+
+**워크플로 구성**
+
+| 파일 | 언제 | 하는 일 |
+| --- | --- | --- |
+| `.github/workflows/ci.yml` | 모든 푸시 / PR | 포맷 확인 · `flutter analyze` · `flutter test` · 웹 빌드, 빌드 결과 아티팩트 업로드 |
+| `.github/workflows/deploy.yml` | 기본 브랜치 푸시 / 수동 실행 | 검증 후 빌드 → 라이브 채널 배포 |
+| `.github/workflows/pr-preview.yml` | PR | 미리보기 채널(7일 만료) 배포 후 PR 에 URL 댓글 |
+
+`deploy.yml` 은 브랜치 이름을 고정하지 않고 **저장소의 기본 브랜치**와 비교합니다.
+지금은 이 작업 브랜치가 기본 브랜치이므로 여기에 푸시하면 배포되고, 나중에 기본
+브랜치를 `main` 으로 바꿔도 파일 수정 없이 그대로 동작합니다.
+포크에서 올라온 PR 은 시크릿에 접근할 수 없어 미리보기를 건너뜁니다.
+
+Flutter 버전은 각 워크플로 상단의 `FLUTTER_VERSION` 에서 한 곳씩 바꿉니다.
+
+### 수동 배포
+
+```bash
+firebase use --add                    # Firebase 프로젝트 선택 → .firebaserc 생성
+flutter build web --release
 firebase deploy --only hosting
 ```
 
-`firebase.json` 에 `predeploy` 로 `flutter build web --release` 가 걸려 있어서
-`firebase deploy` 만 실행해도 최신 빌드가 올라갑니다. 이미 빌드해 둔 결과만 올리려면
-`firebase deploy --only hosting --except functions` 대신 predeploy 항목을 지우세요.
+빌드와 배포는 분리되어 있습니다(`firebase.json` 에 predeploy 훅 없음). 배포 전에
+`flutter build web --release` 를 먼저 실행해야 최신 코드가 올라갑니다.
 
-설정 요약:
+### Hosting 설정 요약
 
 - `public: build/web`, SPA 라우팅(`rewrites`)
 - `index.html` / `main.dart.js` / `flutter_bootstrap.js` 는 `no-cache` — 배포 즉시 새 버전이 반영됩니다.
@@ -84,10 +127,13 @@ firebase deploy --only hosting
 ## 검증 상태
 
 ```bash
-flutter analyze     # 이슈 없음
-flutter test        # 11개 테스트 통과
-flutter build web --release   # 성공
+dart format --output=none --set-exit-if-changed .   # 포맷 통과
+flutter analyze                                     # 이슈 없음
+flutter test                                        # 11개 테스트 통과
+flutter build web --release                         # 성공
 ```
+
+같은 명령이 `.github/workflows/ci.yml` 에서 모든 푸시·PR 마다 실행됩니다.
 
 > 브라우저에서의 실제 동작(녹음 → 저장 → 재생)은 이 저장소의 개발 환경에서 확인하지
 > 못했습니다. 샌드박스의 헤드리스 Chromium 에서 Flutter 3.47 웹 엔진이 초기화를 끝내지
@@ -125,6 +171,13 @@ web/
 ├── index.html                     로딩 표시, 한국어 메타데이터
 ├── flutter_bootstrap.js           CanvasKit 자체 호스팅 설정
 └── manifest.json                  PWA 매니페스트(홈 화면 추가용)
+
+.github/workflows/
+├── ci.yml                         포맷·분석·테스트·빌드
+├── deploy.yml                     기본 브랜치 → 라이브 채널 배포
+└── pr-preview.yml                 PR → 미리보기 채널 배포
+
+firebase.json                      Hosting 설정(캐시 헤더, SPA 라우팅)
 ```
 
 ## 문항 추가하기

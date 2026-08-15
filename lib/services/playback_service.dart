@@ -57,8 +57,8 @@ class PlaybackService extends ChangeNotifier {
     _duration = Duration.zero;
     notifyListeners();
 
-    final String? dataUrl =
-        _cache[attemptId] ?? await RecordingStorage.instance.loadAudio(attemptId);
+    final String? dataUrl = _cache[attemptId] ??
+        await RecordingStorage.instance.loadAudio(attemptId);
     if (dataUrl == null) {
       debugPrint('재생할 오디오를 찾지 못했습니다: $attemptId');
       _loadingId = null;

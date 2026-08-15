@@ -26,8 +26,7 @@ const List<Question> kQuestions = <Question>[
     id: 'ra_02',
     partId: PartId.readAloud,
     title: '지역 서점 광고',
-    passage:
-        'Are you looking for the perfect gift? Visit Riverside Books this '
+    passage: 'Are you looking for the perfect gift? Visit Riverside Books this '
         'weekend for our annual autumn sale. You will find bestsellers, '
         'children\'s books, and rare collections, all at up to forty percent '
         'off. Our staff will be happy to help you find exactly what you need. '
@@ -44,8 +43,7 @@ const List<Question> kQuestions = <Question>[
     id: 'ra_03',
     partId: PartId.readAloud,
     title: '라디오 교통 정보',
-    passage:
-        'Good morning, and thanks for tuning in to your morning traffic '
+    passage: 'Good morning, and thanks for tuning in to your morning traffic '
         'update. Due to ongoing construction, the northbound lanes of Highway '
         'nine are moving very slowly this morning. Drivers heading downtown '
         'should expect delays of up to thirty minutes. If possible, consider '
@@ -206,8 +204,7 @@ const List<Question> kQuestions = <Question>[
       ),
       Prompt(
         label: 'Question 7',
-        text:
-            'What are some advantages of reading books instead of watching '
+        text: 'What are some advantages of reading books instead of watching '
             'videos? Give two reasons.',
         prepSeconds: 3,
         answerSeconds: 30,
@@ -240,8 +237,7 @@ const List<Question> kQuestions = <Question>[
       ),
       Prompt(
         label: 'Question 7',
-        text:
-            'What would make public transportation in your city better? '
+        text: 'What would make public transportation in your city better? '
             'Explain with two suggestions.',
         prepSeconds: 3,
         answerSeconds: 30,
@@ -267,16 +263,14 @@ const List<Question> kQuestions = <Question>[
       ),
       Prompt(
         label: 'Question 6',
-        text:
-            'What kind of food do you usually order, and who do you eat it '
+        text: 'What kind of food do you usually order, and who do you eat it '
             'with?',
         prepSeconds: 3,
         answerSeconds: 15,
       ),
       Prompt(
         label: 'Question 7',
-        text:
-            'Would you recommend your favorite delivery restaurant to a '
+        text: 'Would you recommend your favorite delivery restaurant to a '
             'friend? Why or why not?',
         prepSeconds: 3,
         answerSeconds: 30,
@@ -307,8 +301,7 @@ const List<Question> kQuestions = <Question>[
       ),
       Prompt(
         label: 'Question 7',
-        text:
-            'Some people say exercising alone is better than exercising in a '
+        text: 'Some people say exercising alone is better than exercising in a '
             'group. What do you think?',
         prepSeconds: 3,
         answerSeconds: 30,
@@ -331,8 +324,16 @@ const List<Question> kQuestions = <Question>[
       subtitle: 'Saturday, June 14 · Grand Hall, Milton Convention Center',
       rows: <List<String>>[
         <String>['9:00 A.M.', 'Registration & Coffee', 'Lobby'],
-        <String>['9:30 A.M.', 'Opening Remarks — Ms. Karen Bishop', 'Grand Hall'],
-        <String>['10:00 A.M.', 'Social Media Strategy — Mr. Alan Reed', 'Room A'],
+        <String>[
+          '9:30 A.M.',
+          'Opening Remarks — Ms. Karen Bishop',
+          'Grand Hall'
+        ],
+        <String>[
+          '10:00 A.M.',
+          'Social Media Strategy — Mr. Alan Reed',
+          'Room A'
+        ],
         <String>['12:00 P.M.', 'Lunch (provided)', 'Cafeteria'],
         <String>['1:30 P.M.', 'Email Campaigns — Ms. Julia Kim', 'Room A'],
         <String>['3:00 P.M.', 'Panel Discussion', 'Grand Hall'],
@@ -342,16 +343,14 @@ const List<Question> kQuestions = <Question>[
     prompts: <Prompt>[
       Prompt(
         label: 'Question 8',
-        text:
-            'Hi, this is Daniel Cho. I registered for the workshop. Where is '
+        text: 'Hi, this is Daniel Cho. I registered for the workshop. Where is '
             'it being held, and what time does it start?',
         prepSeconds: 3,
         answerSeconds: 15,
       ),
       Prompt(
         label: 'Question 9',
-        text:
-            'I heard that lunch is not included, so I should bring my own '
+        text: 'I heard that lunch is not included, so I should bring my own '
             'food. Is that right?',
         prepSeconds: 3,
         answerSeconds: 15,
@@ -359,8 +358,7 @@ const List<Question> kQuestions = <Question>[
       ),
       Prompt(
         label: 'Question 10',
-        text:
-            'I am mainly interested in the sessions in the afternoon. Could '
+        text: 'I am mainly interested in the sessions in the afternoon. Could '
             'you tell me all the details of what happens after lunch?',
         prepSeconds: 3,
         answerSeconds: 30,
@@ -399,16 +397,14 @@ const List<Question> kQuestions = <Question>[
       ),
       Prompt(
         label: 'Question 9',
-        text:
-            'I believe all of the candidates have more than five years of '
+        text: 'I believe all of the candidates have more than five years of '
             'experience. Is that correct?',
         prepSeconds: 3,
         answerSeconds: 15,
       ),
       Prompt(
         label: 'Question 10',
-        text:
-            'I will only be available in the afternoon. Can you tell me '
+        text: 'I will only be available in the afternoon. Can you tell me '
             'everything scheduled after lunch?',
         prepSeconds: 3,
         answerSeconds: 30,
@@ -428,9 +424,17 @@ const List<Question> kQuestions = <Question>[
       title: 'Business Trip Itinerary — Ms. Helen Park',
       subtitle: 'Thursday, May 22 · Seattle',
       rows: <List<String>>[
-        <String>['7:20 A.M.', 'Flight KE073 departs (Incheon → Seattle)', 'Gate 24'],
+        <String>[
+          '7:20 A.M.',
+          'Flight KE073 departs (Incheon → Seattle)',
+          'Gate 24'
+        ],
         <String>['11:00 A.M.', 'Hotel check-in', 'Bayview Hotel'],
-        <String>['1:00 P.M.', 'Lunch with client — Mr. Steven Ross', 'Harbor Grill'],
+        <String>[
+          '1:00 P.M.',
+          'Lunch with client — Mr. Steven Ross',
+          'Harbor Grill'
+        ],
         <String>['3:00 P.M.', 'Factory tour', 'Northline Plant'],
         <String>['6:30 P.M.', 'Company dinner', 'Bayview Hotel'],
       ],
@@ -444,7 +448,8 @@ const List<Question> kQuestions = <Question>[
       ),
       Prompt(
         label: 'Question 9',
-        text: 'I remember I am having lunch with Ms. Diane Cole. Is that right?',
+        text:
+            'I remember I am having lunch with Ms. Diane Cole. Is that right?',
         prepSeconds: 3,
         answerSeconds: 15,
       ),
@@ -470,8 +475,7 @@ const List<Question> kQuestions = <Question>[
     prompts: <Prompt>[
       Prompt(
         label: 'Question 11',
-        text:
-            'Do you agree or disagree with the following statement? Working '
+        text: 'Do you agree or disagree with the following statement? Working '
             'from home is more productive than working in an office. Give '
             'reasons or examples to support your opinion.',
         prepSeconds: 45,
@@ -505,8 +509,7 @@ const List<Question> kQuestions = <Question>[
     prompts: <Prompt>[
       Prompt(
         label: 'Question 11',
-        text:
-            'Some people prefer taking classes online, while others prefer '
+        text: 'Some people prefer taking classes online, while others prefer '
             'attending classes in person. Which do you prefer, and why?',
         prepSeconds: 45,
         answerSeconds: 60,
@@ -526,8 +529,7 @@ const List<Question> kQuestions = <Question>[
     prompts: <Prompt>[
       Prompt(
         label: 'Question 11',
-        text:
-            'Do you agree or disagree? Companies should spend more money on '
+        text: 'Do you agree or disagree? Companies should spend more money on '
             'training their employees than on advertising. Support your '
             'opinion with reasons or examples.',
         prepSeconds: 45,

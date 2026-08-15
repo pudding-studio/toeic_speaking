@@ -79,81 +79,81 @@ class QuestionCard extends StatelessWidget {
     return AppCard(
       onTap: onTap,
       child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
-          child: Row(
-            children: <Widget>[
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(AppTheme.partIcon(part.id), color: color, size: 22),
+        padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+        child: Row(
+          children: <Widget>[
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
               ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      question.title,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
+              child: Icon(AppTheme.partIcon(part.id), color: color, size: 22),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    question.title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Row(
+                    children: <Widget>[
+                      Icon(
+                        Icons.schedule,
+                        size: 14,
+                        color: scheme.onSurfaceVariant,
                       ),
-                    ),
-                    const SizedBox(height: 5),
-                    Row(
-                      children: <Widget>[
-                        Icon(
-                          Icons.schedule,
-                          size: 14,
+                      const SizedBox(width: 4),
+                      Text(
+                        '약 ${formatSeconds(question.totalSeconds)}',
+                        style: TextStyle(
+                          fontSize: 13,
                           color: scheme.onSurfaceVariant,
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '약 ${formatSeconds(question.totalSeconds)}',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: scheme.onSurfaceVariant,
-                          ),
+                      ),
+                      const SizedBox(width: 12),
+                      Icon(
+                        Icons.mic_none,
+                        size: 14,
+                        color: scheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${question.steps.length}문항',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: scheme.onSurfaceVariant,
                         ),
+                      ),
+                      if (attemptCount > 0) ...<Widget>[
                         const SizedBox(width: 12),
-                        Icon(
-                          Icons.mic_none,
-                          size: 14,
-                          color: scheme.onSurfaceVariant,
-                        ),
+                        Icon(Icons.check_circle, size: 14, color: color),
                         const SizedBox(width: 4),
                         Text(
-                          '${question.steps.length}문항',
+                          '$attemptCount회 녹음',
                           style: TextStyle(
                             fontSize: 13,
-                            color: scheme.onSurfaceVariant,
+                            color: color,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                        if (attemptCount > 0) ...<Widget>[
-                          const SizedBox(width: 12),
-                          Icon(Icons.check_circle, size: 14, color: color),
-                          const SizedBox(width: 4),
-                          Text(
-                            '$attemptCount회 녹음',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: color,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
                       ],
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+                ],
               ),
-              Icon(Icons.chevron_right, color: scheme.outline),
-            ],
-          ),
+            ),
+            Icon(Icons.chevron_right, color: scheme.outline),
+          ],
+        ),
       ),
     );
   }

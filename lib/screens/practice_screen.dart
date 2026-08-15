@@ -138,9 +138,8 @@ class _PracticeScreenState extends State<PracticeScreen> {
     if (_busy) return;
     _busy = true;
     _stopCountdown();
-    final int spoken = auto
-        ? _step.answerSeconds
-        : (_phaseTotalMs - _remainingMs) ~/ 1000;
+    final int spoken =
+        auto ? _step.answerSeconds : (_phaseTotalMs - _remainingMs) ~/ 1000;
     final String? audioDataUrl = await RecorderService.instance.stopAndRead();
     _busy = false;
     if (!mounted) return;

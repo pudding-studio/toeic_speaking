@@ -193,45 +193,45 @@ class _PartTile extends StatelessWidget {
     return AppCard(
       onTap: onTap,
       child: Padding(
-          padding: const EdgeInsets.fromLTRB(14, 14, 10, 14),
-          child: Row(
-            children: <Widget>[
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(AppTheme.partIcon(part.id), color: color, size: 21),
+        padding: const EdgeInsets.fromLTRB(14, 14, 10, 14),
+        child: Row(
+          children: <Widget>[
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      part.title,
-                      style: const TextStyle(
-                        fontSize: 15.5,
-                        fontWeight: FontWeight.w700,
-                      ),
+              child: Icon(AppTheme.partIcon(part.id), color: color, size: 21),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    part.title,
+                    style: const TextStyle(
+                      fontSize: 15.5,
+                      fontWeight: FontWeight.w700,
                     ),
-                    const SizedBox(height: 3),
-                    Text(
-                      '문항 $questionCount개'
-                      '${attemptCount > 0 ? ' · 녹음 $attemptCount회' : ''}',
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        color: scheme.onSurfaceVariant,
-                      ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    '문항 $questionCount개'
+                    '${attemptCount > 0 ? ' · 녹음 $attemptCount회' : ''}',
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      color: scheme.onSurfaceVariant,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              Icon(Icons.chevron_right, color: scheme.outline),
-            ],
-          ),
+            ),
+            Icon(Icons.chevron_right, color: scheme.outline),
+          ],
+        ),
       ),
     );
   }

@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+# 같은 브랜치에서 연속 푸시하면 이전 실행은 취소한다.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FLUTTER_VERSION: "3.47.0"
+
+jobs:
+  verify:
+    name: 포맷 · 분석 · 테스트 · 빌드
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: 의존성 설치
+        run: flutter pub get
+
+      - name: 포맷 확인
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: 정적 분석
+        run: flutter analyze
+
+      - name: 테스트
+        run: flutter test
+
+      - name: 웹 빌드
+        run: flutter build web --release
+
+      - name: 빌드 결과 업로드
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: build/web
+          retention-days: 7
