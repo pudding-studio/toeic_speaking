@@ -15,11 +15,19 @@ class RecorderService {
   static final RecorderService instance = RecorderService._();
 
   /// 브라우저가 가장 널리 지원하는 조합(WebM/Opus).
+  ///
+  /// [RecordConfig] 의 autoGain / echoCancel / noiseSuppress 는 기본값이 false 이고,
+  /// 웹에서는 그대로 getUserMedia 제약으로 넘어간다. 자동 게인이 꺼져 있으면
+  /// 노트북 내장 마이크처럼 입력이 작은 환경에서 녹음이 지나치게 작게 들리므로 켠다.
   static const RecordConfig _config = RecordConfig(
     encoder: AudioEncoder.opus,
     bitRate: 64000,
-    sampleRate: 44100,
+    // Opus 는 48kHz 가 기본이라 리샘플링을 피할 수 있다.
+    sampleRate: 48000,
     numChannels: 1,
+    autoGain: true,
+    echoCancel: true,
+    noiseSuppress: true,
   );
 
   final AudioRecorder _recorder = AudioRecorder();
