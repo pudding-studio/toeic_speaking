@@ -16,6 +16,10 @@ pubspec.lock
 *.iws
 
 # Firebase
+# 서비스 계정 키(비공개 키)는 절대 커밋하지 않는다.
+*firebase-adminsdk*.json
+serviceAccount*.json
+service-account*.json
 .firebase/
 firebase-debug.log
 firestore-debug.log
