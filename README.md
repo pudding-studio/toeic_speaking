@@ -80,6 +80,16 @@ TOEIC Speaking 시험(2021 개정, 11문항)을 파트별로 연습하는 Flutte
   않고, 브라우저 데이터를 지우면 사라집니다. 모두에게 보여야 하는 문항은
   `lib/data/question_bank.dart` 에 넣고 배포하세요.
 
+#### 내보내기 · 가져오기
+
+설정 화면의 "내가 등록한 문항"에서 **파일 하나로 내보내고 다시 가져올 수** 있습니다.
+사진과 예시 음성도 base64 로 같은 파일에 담기므로, 그 파일만 옮기면 그대로 복원됩니다.
+
+- 백업, 다른 기기·브라우저로 이동, 저장소에 커밋해 두기 등에 쓸 수 있습니다.
+- 가져오기는 같은 id 의 문항이 있으면 덮어씁니다. 기본 제공 문항은 영향을 받지 않습니다.
+- 형식이 맞지 않거나 다른 앱에서 만든 파일이면 이유를 알려 주고 아무 것도 바꾸지 않습니다.
+  일부 항목만 깨진 경우 나머지는 살리고 건너뛴 개수를 알려 줍니다.
+
 ### 브라우저 요구사항
 
 - 마이크 사용에는 **HTTPS 가 필요합니다**(`localhost` 는 예외). Firebase Hosting 은 HTTPS 를 기본 제공합니다.
@@ -165,7 +175,7 @@ firebase deploy --only hosting
 ```bash
 dart format --output=none --set-exit-if-changed .   # 포맷 통과
 flutter analyze                                     # 이슈 없음
-flutter test                                        # 33개 테스트 통과
+flutter test                                        # 39개 테스트 통과
 flutter build web --release                         # 성공
 ```
 
@@ -193,6 +203,8 @@ lib/
 │   ├── tts_service.dart           읽어주기(Google TTS / 브라우저) + 캐시
 │   ├── settings_store.dart        API 키·음성 설정
 │   ├── sample_audio_service.dart  문항에 올린 예시 음성 재생
+│   ├── question_transfer.dart     문항 내보내기·가져오기 형식
+│   ├── file_download.dart         파일 내려받기(웹 전용 구현 조건부 임포트)
 │   ├── local_storage.dart         IndexedDB (녹음 / 등록한 문항)
 │   ├── playback_service.dart      재생(재생 시점에 오디오 로드)
 │   ├── attempt_store.dart         녹음 목록 상태
@@ -295,4 +307,4 @@ Question(
 
 `record`(녹음) · `audioplayers`(재생·음성 출력) · `flutter_tts`(브라우저 읽어주기) ·
 `idb_shim`(IndexedDB) · `image_picker`(사진 선택) · `file_picker`(음성 파일 선택) ·
-`http`(HTTP 호출) · `crypto`(캐시 키) · `intl`(날짜 표시)
+`http`(HTTP 호출) · `crypto`(캐시 키) · `web`(파일 내려받기) · `intl`(날짜 표시)

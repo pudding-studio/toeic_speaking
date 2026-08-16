@@ -1,8 +1,13 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
+import '../services/file_download.dart';
 import '../services/local_storage.dart';
+import '../services/question_store.dart';
+import '../services/question_transfer.dart';
 import '../services/settings_store.dart';
 import '../services/tts_service.dart';
 import '../theme.dart';
@@ -26,6 +31,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String? _testResult;
   bool _testFailed = false;
   int _cacheCount = 0;
+  bool _transferring = false;
 
   @override
   void initState() {
@@ -102,6 +108,165 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await TtsService.instance.speak(_sampleText);
       await _refreshCacheCount();
     }
+  }
+
+  Future<void> _exportQuestions() async {
+    setState(() => _transferring = true);
+    try {
+      final List<QuestionBundle> bundles =
+          await QuestionStore.instance.exportBundles();
+      if (bundles.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('내보낼 문항이 없습니다. 먼저 문항을 등록해 주세요.')),
+        );
+        return;
+      }
+      final DateTime now = DateTime.now();
+      downloadBytes(
+        bytes: Uint8List.fromList(
+          utf8.encode(QuestionTransfer.encode(bundles, exportedAt: now)),
+        ),
+        fileName: QuestionTransfer.fileName(now),
+        mimeType: 'application/json',
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('문항 ${bundles.length}개를 파일로 내보냈습니다.')),
+      );
+    } on Object catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('내보내기에 실패했습니다: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _transferring = false);
+    }
+  }
+
+  Future<void> _importQuestions() async {
+    final PlatformFile? file;
+    try {
+      file = await FilePicker.pickFile(
+        type: FileType.custom,
+        allowedExtensions: <String>['json'],
+        dialogTitle: '문항 파일 선택',
+      );
+    } on Object catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('파일을 열지 못했습니다: $e')),
+      );
+      return;
+    }
+    if (file == null) return;
+
+    setState(() => _transferring = true);
+    try {
+      final Uint8List bytes = await file.readAsBytes();
+      final ImportResult result = QuestionTransfer.decode(utf8.decode(bytes));
+
+      if (!mounted) return;
+      if (result.isFailure) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(result.error!)),
+        );
+        return;
+      }
+      if (result.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('파일에 읽을 수 있는 문항이 없습니다.')),
+        );
+        return;
+      }
+
+      final ({int added, int replaced, int failed}) counts =
+          await QuestionStore.instance.importBundles(result.bundles);
+
+      if (!mounted) return;
+      final List<String> parts = <String>[
+        if (counts.added > 0) '새로 ${counts.added}개',
+        if (counts.replaced > 0) '덮어쓰기 ${counts.replaced}개',
+        if (counts.failed > 0) '실패 ${counts.failed}개',
+        if (result.skipped > 0) '건너뜀 ${result.skipped}개',
+      ];
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('문항을 가져왔습니다 — ${parts.join(' · ')}')),
+      );
+    } on FormatException {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('파일을 읽지 못했습니다. UTF-8 JSON 파일인지 확인해 주세요.')),
+      );
+    } on Object catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('가져오기에 실패했습니다: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _transferring = false);
+    }
+  }
+
+  Widget _questionBackupSection(ColorScheme scheme) {
+    return AnimatedBuilder(
+      animation: QuestionStore.instance,
+      builder: (BuildContext context, Widget? _) {
+        final int count = QuestionStore.instance.customQuestions.length;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            const Text(
+              '내가 등록한 문항',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              '앱에서 등록한 문항은 이 브라우저에만 있습니다. 파일로 내보내 두면 '
+              '백업하거나 다른 기기·다른 브라우저로 옮길 수 있습니다. '
+              '사진과 예시 음성도 파일 하나에 같이 담깁니다.',
+              style: TextStyle(
+                fontSize: 13,
+                height: 1.5,
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              '현재 $count개 등록됨',
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed:
+                        _transferring || count == 0 ? null : _exportQuestions,
+                    icon: const Icon(Icons.download_outlined, size: 18),
+                    label: const Text('내보내기'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _transferring ? null : _importQuestions,
+                    icon: const Icon(Icons.upload_outlined, size: 18),
+                    label: const Text('가져오기'),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '가져오기는 같은 문항(같은 id)이 있으면 덮어씁니다. '
+              '기본 제공 문항은 영향을 받지 않습니다.',
+              style: TextStyle(fontSize: 12.5, color: scheme.onSurfaceVariant),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -288,6 +453,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ],
               ),
+              const SizedBox(height: 26),
+              _questionBackupSection(scheme),
               const SizedBox(height: 26),
               const _KeyGuide(),
             ],

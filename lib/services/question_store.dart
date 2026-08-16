@@ -4,6 +4,7 @@ import '../data/question_bank.dart';
 import '../models/question.dart';
 import '../models/toeic_part.dart';
 import 'local_storage.dart';
+import 'question_transfer.dart';
 
 /// 기본 제공 문항([kQuestions])과 앱에서 등록한 문항을 합쳐서 관리한다.
 ///
@@ -116,6 +117,49 @@ class QuestionStore extends ChangeNotifier {
         await LocalStorage.instance.loadQuestionAudio(questionId);
     _audioCache[questionId] = bytes;
     return bytes;
+  }
+
+  /// 등록한 문항을 사진·예시 음성까지 묶어서 내보낼 형태로 모은다.
+  Future<List<QuestionBundle>> exportBundles() async {
+    final List<QuestionBundle> bundles = <QuestionBundle>[];
+    for (final Question q in _custom) {
+      bundles.add(
+        QuestionBundle(
+          question: q,
+          image: await imageOf(q.id),
+          audio: q.hasSampleAudio ? await audioOf(q.id) : null,
+        ),
+      );
+    }
+    return bundles;
+  }
+
+  /// 가져온 문항을 저장한다. 같은 id 가 있으면 덮어쓴다.
+  /// 돌려주는 값은 (새로 추가한 수, 덮어쓴 수, 저장하지 못한 수).
+  Future<({int added, int replaced, int failed})> importBundles(
+    List<QuestionBundle> bundles,
+  ) async {
+    int added = 0;
+    int replaced = 0;
+    int failed = 0;
+
+    for (final QuestionBundle bundle in bundles) {
+      final bool exists =
+          _custom.any((Question q) => q.id == bundle.question.id);
+      final bool ok = await save(
+        bundle.question,
+        imageBytes: bundle.image,
+        audioBytes: bundle.audio,
+      );
+      if (!ok) {
+        failed++;
+      } else if (exists) {
+        replaced++;
+      } else {
+        added++;
+      }
+    }
+    return (added: added, replaced: replaced, failed: failed);
   }
 
   void _sort() => _custom.sort((Question a, Question b) {
