@@ -86,6 +86,39 @@ void main() {
       expect(restored.scene!.details, <String>['상세 1']);
     });
 
+    test('예시 음성 여부가 JSON 왕복 후 보존된다', () {
+      const Question withAudio = Question(
+        id: 'custom_readAloud_2',
+        partId: PartId.readAloud,
+        title: '예시 음성 있는 문항',
+        passage: 'Attention.',
+        isCustom: true,
+        hasSampleAudio: true,
+      );
+
+      final Question? restored = Question.fromJson(withAudio.toJson());
+      expect(restored, isNotNull);
+      expect(restored!.hasSampleAudio, isTrue);
+    });
+
+    test('예시 음성이 없으면 기본값은 false 다', () {
+      const Question noAudio = Question(
+        id: 'custom_readAloud_3',
+        partId: PartId.readAloud,
+        title: '예시 음성 없는 문항',
+        passage: 'Attention.',
+        isCustom: true,
+      );
+      expect(noAudio.hasSampleAudio, isFalse);
+
+      // 옛 형식(필드 자체가 없는 JSON)도 false 로 읽힌다.
+      final Question? old = Question.fromJson(
+        '{"id":"x","title":"t","partId":"readAloud"}',
+      );
+      expect(old, isNotNull);
+      expect(old!.hasSampleAudio, isFalse);
+    });
+
     test('기본 문항은 isCustom 이 false 다', () {
       const Question builtIn = Question(
         id: 'ra_01',

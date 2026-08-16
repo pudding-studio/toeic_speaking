@@ -20,14 +20,15 @@ class LocalStorage {
 
   static const String _dbName = 'toeic_speaking';
 
-  /// v3 에서 설정과 음성 캐시 스토어를 추가했다. 기존 데이터는 그대로 유지된다.
-  static const int _dbVersion = 3;
+  /// v4 에서 문항 예시 음성 스토어를 추가했다. 기존 데이터는 그대로 유지된다.
+  static const int _dbVersion = 4;
   static const String _attemptStore = 'attempts';
   static const String _audioStore = 'audio';
   static const String _questionStore = 'questions';
   static const String _questionImageStore = 'questionImages';
   static const String _settingsStore = 'settings';
   static const String _ttsCacheStore = 'ttsCache';
+  static const String _questionAudioStore = 'questionAudio';
 
   Database? _db;
   Future<Database?>? _opening;
@@ -71,6 +72,9 @@ class LocalStorage {
           }
           if (!db.objectStoreNames.contains(_ttsCacheStore)) {
             db.createObjectStore(_ttsCacheStore);
+          }
+          if (!db.objectStoreNames.contains(_questionAudioStore)) {
+            db.createObjectStore(_questionAudioStore);
           }
         },
       );
@@ -181,28 +185,54 @@ class LocalStorage {
     }
   }
 
-  /// 문항을 저장한다. [imageBytes] 가 null 이면 기존 사진을 그대로 둔다.
+  /// 문항을 저장한다.
+  /// [imageBytes] / [audioBytes] 가 null 이면 기존 것을 그대로 둔다.
+  /// [removeAudio] 가 true 면 저장돼 있던 예시 음성을 지운다.
   Future<bool> saveQuestion({
     required String id,
     required String questionJson,
     Uint8List? imageBytes,
+    Uint8List? audioBytes,
+    bool removeAudio = false,
   }) async {
     final Database? db = await open();
     if (db == null) return false;
     try {
       final Transaction txn = db.transactionList(
-        <String>[_questionStore, _questionImageStore],
+        <String>[_questionStore, _questionImageStore, _questionAudioStore],
         idbModeReadWrite,
       );
       await txn.objectStore(_questionStore).put(questionJson, id);
       if (imageBytes != null) {
         await txn.objectStore(_questionImageStore).put(imageBytes, id);
       }
+      if (audioBytes != null) {
+        await txn.objectStore(_questionAudioStore).put(audioBytes, id);
+      } else if (removeAudio) {
+        await txn.objectStore(_questionAudioStore).delete(id);
+      }
       await txn.completed;
       return true;
     } on Object catch (e) {
       debugPrint('문항을 저장하지 못했습니다: $e');
       return false;
+    }
+  }
+
+  /// 문항에 붙여 둔 예시 음성. 없으면 null.
+  Future<Uint8List?> loadQuestionAudio(String id) async {
+    final Database? db = await open();
+    if (db == null) return null;
+    try {
+      final Transaction txn =
+          db.transaction(_questionAudioStore, idbModeReadOnly);
+      final Object? value =
+          await txn.objectStore(_questionAudioStore).getObject(id);
+      await txn.completed;
+      return _asBytes(value);
+    } on Object catch (e) {
+      debugPrint('예시 음성을 읽지 못했습니다: $e');
+      return null;
     }
   }
 
@@ -228,11 +258,12 @@ class LocalStorage {
     if (db == null) return;
     try {
       final Transaction txn = db.transactionList(
-        <String>[_questionStore, _questionImageStore],
+        <String>[_questionStore, _questionImageStore, _questionAudioStore],
         idbModeReadWrite,
       );
       await txn.objectStore(_questionStore).delete(id);
       await txn.objectStore(_questionImageStore).delete(id);
+      await txn.objectStore(_questionAudioStore).delete(id);
       await txn.completed;
     } on Object catch (e) {
       debugPrint('문항을 삭제하지 못했습니다: $e');

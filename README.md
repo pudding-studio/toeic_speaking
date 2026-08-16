@@ -71,6 +71,9 @@ TOEIC Speaking 시험(2021 개정, 11문항)을 파트별로 연습하는 Flutte
 파트 탭 맨 아래 "○○ 문항 직접 등록" 버튼으로 문항을 만들 수 있습니다.
 
 - 파트에 따라 필요한 입력만 나옵니다 (낭독 지문 / 사진·장면 설명 / 질문·시간 / 자료 표).
+- **예시 음성**을 파일로 올릴 수 있습니다(mp3·m4a·wav). 직접 녹음했거나 다른 도구로
+  만든 음성을 붙여 두면, 연습 화면 맨 위 "예시 음성" 카드에서 모범 낭독으로 들을 수
+  있습니다. 읽어주기와 마찬가지로 답변 녹음이 시작되면 자동으로 멈춥니다.
 - 등록한 문항은 목록에서 "내 문항" 배지가 붙고, 오른쪽 메뉴로 수정·삭제할 수 있습니다.
 - 기본 제공 문항은 코드에 있으므로 앱에서 수정·삭제되지 않습니다.
 - **녹음과 마찬가지로 이 브라우저에만 저장됩니다.** 다른 기기나 다른 사람에게는 보이지
@@ -162,7 +165,7 @@ firebase deploy --only hosting
 ```bash
 dart format --output=none --set-exit-if-changed .   # 포맷 통과
 flutter analyze                                     # 이슈 없음
-flutter test                                        # 31개 테스트 통과
+flutter test                                        # 33개 테스트 통과
 flutter build web --release                         # 성공
 ```
 
@@ -189,6 +192,7 @@ lib/
 │   ├── recorder_service.dart      마이크 녹음 → data URL 변환
 │   ├── tts_service.dart           읽어주기(Google TTS / 브라우저) + 캐시
 │   ├── settings_store.dart        API 키·음성 설정
+│   ├── sample_audio_service.dart  문항에 올린 예시 음성 재생
 │   ├── local_storage.dart         IndexedDB (녹음 / 등록한 문항)
 │   ├── playback_service.dart      재생(재생 시점에 오디오 로드)
 │   ├── attempt_store.dart         녹음 목록 상태
@@ -290,5 +294,5 @@ Question(
 ## 사용 패키지
 
 `record`(녹음) · `audioplayers`(재생·음성 출력) · `flutter_tts`(브라우저 읽어주기) ·
-`idb_shim`(IndexedDB) · `image_picker`(사진 선택) · `http`(HTTP 호출) ·
-`crypto`(캐시 키) · `intl`(날짜 표시)
+`idb_shim`(IndexedDB) · `image_picker`(사진 선택) · `file_picker`(음성 파일 선택) ·
+`http`(HTTP 호출) · `crypto`(캐시 키) · `intl`(날짜 표시)

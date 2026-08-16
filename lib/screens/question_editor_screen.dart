@@ -1,11 +1,13 @@
 import 'dart:typed_data';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../models/question.dart';
 import '../models/toeic_part.dart';
 import '../services/question_store.dart';
+import '../services/sample_audio_service.dart';
 import '../theme.dart';
 
 /// 앱에서 직접 문항을 등록/수정하는 화면.
@@ -38,7 +40,20 @@ class _QuestionEditorScreenState extends State<QuestionEditorScreen> {
   final List<_TableRowFields> _rows = <_TableRowFields>[];
 
   Uint8List? _imageBytes;
+
+  /// 새로 고른 예시 음성. null 이면 기존 것을 그대로 둔다.
+  Uint8List? _audioBytes;
+  String? _audioName;
+
+  /// 저장돼 있던 예시 음성을 지울지.
+  bool _removeAudio = false;
+
+  /// 수정 중인 문항에 이미 예시 음성이 붙어 있는지.
+  bool _hadAudio = false;
+
   bool _saving = false;
+
+  bool get _hasAudio => _audioBytes != null || (_hadAudio && !_removeAudio);
 
   ToeicPart get _part => partById(widget.partId);
   Color get _color => AppTheme.partColor(widget.partId);
@@ -86,6 +101,8 @@ class _QuestionEditorScreenState extends State<QuestionEditorScreen> {
         _prompts.addAll(existing.map(_PromptFields.from));
       }
     }
+
+    _hadAudio = q?.hasSampleAudio ?? false;
 
     if (_isEditing && q!.isCustom) {
       QuestionStore.instance.imageOf(q.id).then((Uint8List? bytes) {
@@ -172,6 +189,34 @@ class _QuestionEditorScreenState extends State<QuestionEditorScreen> {
     }
   }
 
+  Future<void> _pickAudio() async {
+    try {
+      final PlatformFile? file = await FilePicker.pickFile(
+        type: FileType.audio,
+        dialogTitle: '예시 음성 파일 선택',
+      );
+      if (file == null) return;
+      final Uint8List bytes = await file.readAsBytes();
+      if (!mounted) return;
+      if (bytes.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('빈 파일입니다.')),
+        );
+        return;
+      }
+      setState(() {
+        _audioBytes = bytes;
+        _audioName = file.name;
+        _removeAudio = false;
+      });
+    } on Object catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('음성 파일을 불러오지 못했습니다: $e')),
+      );
+    }
+  }
+
   Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
@@ -215,10 +260,15 @@ class _QuestionEditorScreenState extends State<QuestionEditorScreen> {
           _sampleAnswer.text.trim().isEmpty ? null : _sampleAnswer.text.trim(),
       keyExpressions: _lines(_keyExpressions.text),
       isCustom: true,
+      hasSampleAudio: _hasAudio,
     );
 
-    final bool ok =
-        await QuestionStore.instance.save(question, imageBytes: _imageBytes);
+    final bool ok = await QuestionStore.instance.save(
+      question,
+      imageBytes: _imageBytes,
+      audioBytes: _audioBytes,
+      removeAudio: _removeAudio,
+    );
 
     if (!mounted) return;
     setState(() => _saving = false);
@@ -330,6 +380,7 @@ class _QuestionEditorScreenState extends State<QuestionEditorScreen> {
               _tableEditor(scheme),
             ],
             if (_needsPrompts) _promptEditor(scheme),
+            _audioField(scheme),
             _field(
               controller: _sampleAnswer,
               label: '모범 답안 (선택)',
@@ -446,6 +497,91 @@ class _QuestionEditorScreenState extends State<QuestionEditorScreen> {
                 TextButton(
                   onPressed: () => setState(() => _imageBytes = null),
                   child: const Text('사진 빼기'),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _audioField(ColorScheme scheme) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          const Text(
+            '예시 음성 (선택)',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '직접 녹음했거나 다른 도구로 만든 mp3·m4a·wav 파일을 올리면, '
+            '연습 화면에서 모범 낭독으로 들을 수 있습니다.',
+            style: TextStyle(
+              fontSize: 12.5,
+              height: 1.5,
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: scheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: <Widget>[
+                Icon(
+                  _hasAudio ? Icons.audiotrack : Icons.music_off_outlined,
+                  size: 18,
+                  color: _hasAudio ? _color : scheme.outline,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    _audioName ?? (_hasAudio ? '저장된 예시 음성이 있습니다' : '예시 음성 없음'),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: _hasAudio ? FontWeight.w700 : FontWeight.w500,
+                      color: _hasAudio
+                          ? scheme.onSurface
+                          : scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                if (_hadAudio && !_removeAudio && _audioBytes == null)
+                  IconButton(
+                    tooltip: '들어보기',
+                    onPressed: () =>
+                        SampleAudioService.instance.toggle(widget.existing!.id),
+                    icon: Icon(Icons.play_arrow_rounded, color: _color),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: <Widget>[
+              OutlinedButton.icon(
+                onPressed: _pickAudio,
+                icon: const Icon(Icons.upload_file, size: 18),
+                label: Text(_hasAudio ? '음성 바꾸기' : '음성 파일 선택'),
+              ),
+              if (_hasAudio) ...<Widget>[
+                const SizedBox(width: 8),
+                TextButton(
+                  onPressed: () => setState(() {
+                    _audioBytes = null;
+                    _audioName = null;
+                    _removeAudio = true;
+                  }),
+                  child: const Text('음성 빼기'),
                 ),
               ],
             ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../services/sample_audio_service.dart';
 import '../services/tts_service.dart';
 
 /// 지문을 브라우저 음성으로 들어 보는 컨트롤.
@@ -155,6 +156,73 @@ class _SpeedToggle extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// 문항에 직접 올려 둔 예시 음성을 재생하는 컨트롤.
+/// 녹음 중에는 소리가 마이크로 들어가므로 [enabled] 를 false 로 넘겨 막는다.
+class SampleAudioControls extends StatelessWidget {
+  const SampleAudioControls({
+    super.key,
+    required this.questionId,
+    required this.color,
+    this.enabled = true,
+  });
+
+  final String questionId;
+  final Color color;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+
+    return AnimatedBuilder(
+      animation: SampleAudioService.instance,
+      builder: (BuildContext context, Widget? _) {
+        final SampleAudioService audio = SampleAudioService.instance;
+        final bool playing = audio.isPlaying(questionId);
+        final bool loading = audio.isLoading(questionId);
+
+        return Row(
+          children: <Widget>[
+            FilledButton.tonalIcon(
+              onPressed:
+                  enabled && !loading ? () => audio.toggle(questionId) : null,
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(0, 40),
+                backgroundColor: color.withValues(alpha: 0.12),
+                foregroundColor: color,
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                textStyle: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              icon: loading
+                  ? SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: color,
+                      ),
+                    )
+                  : Icon(
+                      playing ? Icons.stop_rounded : Icons.play_arrow_rounded,
+                      size: 20,
+                    ),
+              label: Text(playing ? '정지' : '예시 음성 듣기'),
+            ),
+            const Spacer(),
+            Text(
+              enabled ? '직접 올린 음성' : '녹음 중에는 멈춤',
+              style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
+            ),
+          ],
+        );
+      },
     );
   }
 }

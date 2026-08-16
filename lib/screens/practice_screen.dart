@@ -9,6 +9,7 @@ import '../models/toeic_part.dart';
 import '../services/attempt_store.dart';
 import '../services/playback_service.dart';
 import '../services/recorder_service.dart';
+import '../services/sample_audio_service.dart';
 import '../services/tts_service.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
@@ -52,6 +53,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
   void dispose() {
     _timer?.cancel();
     unawaited(TtsService.instance.stop());
+    unawaited(SampleAudioService.instance.stop());
     // 화면을 벗어날 때 진행 중인 녹음은 버린다.
     if (_phase == _Phase.answering) {
       unawaited(RecorderService.instance.cancel());
@@ -121,8 +123,9 @@ class _PracticeScreenState extends State<PracticeScreen> {
     if (_busy) return;
     _busy = true;
     _stopCountdown();
-    // 읽어주기 소리가 녹음에 섞이지 않도록 먼저 멈춘다.
+    // 읽어주기·예시 음성이 녹음에 섞이지 않도록 먼저 멈춘다.
     await TtsService.instance.stop();
+    await SampleAudioService.instance.stop();
     final bool started = await RecorderService.instance.start();
     _busy = false;
     if (!mounted) return;
@@ -369,6 +372,18 @@ class _PracticeScreenState extends State<PracticeScreen> {
   List<Widget> _contentBlocks() {
     final List<Widget> blocks = <Widget>[];
     final ColorScheme scheme = Theme.of(context).colorScheme;
+
+    if (_q.hasSampleAudio) {
+      blocks.add(_SectionCard(
+        title: '예시 음성',
+        color: _color,
+        child: SampleAudioControls(
+          questionId: _q.id,
+          color: _color,
+          enabled: _phase != _Phase.answering,
+        ),
+      ));
+    }
 
     if (_q.passage != null) {
       blocks.add(_SectionCard(

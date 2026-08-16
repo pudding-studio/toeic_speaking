@@ -76,6 +76,7 @@ class Question {
     this.sampleAnswer,
     this.keyExpressions = const <String>[],
     this.isCustom = false,
+    this.hasSampleAudio = false,
   });
 
   final String id;
@@ -104,6 +105,10 @@ class Question {
 
   /// 앱 화면에서 사용자가 직접 등록한 문항인지. 이 브라우저에만 저장된다.
   final bool isCustom;
+
+  /// 직접 올린 예시 음성(모범 낭독)이 있는지.
+  /// 실제 오디오는 문항 id 를 키로 브라우저 저장소에 들어 있다.
+  final bool hasSampleAudio;
 
   ToeicPart get part => partById(partId);
 
@@ -136,6 +141,7 @@ class Question {
         if (sampleAnswer != null) 'sampleAnswer': sampleAnswer,
         if (keyExpressions.isNotEmpty) 'keyExpressions': keyExpressions,
         'isCustom': isCustom,
+        'hasSampleAudio': hasSampleAudio,
       };
 
   static Question? fromMap(Map<String, dynamic> map) {
@@ -176,6 +182,7 @@ class Question {
       sampleAnswer: map['sampleAnswer'] as String?,
       keyExpressions: _stringList(map['keyExpressions']),
       isCustom: (map['isCustom'] as bool?) ?? true,
+      hasSampleAudio: (map['hasSampleAudio'] as bool?) ?? false,
     );
   }
 

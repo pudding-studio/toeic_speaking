@@ -18,6 +18,9 @@ class QuestionStore extends ChangeNotifier {
   /// 사진 바이트 캐시. 화면을 다시 그릴 때마다 저장소를 읽지 않도록 들고 있는다.
   final Map<String, Uint8List?> _imageCache = <String, Uint8List?>{};
 
+  /// 예시 음성 바이트 캐시.
+  final Map<String, Uint8List?> _audioCache = <String, Uint8List?>{};
+
   bool _loaded = false;
 
   bool get isLoaded => _loaded;
@@ -57,11 +60,18 @@ class QuestionStore extends ChangeNotifier {
 
   /// 문항을 저장한다. 이미 있는 id 면 덮어쓴다.
   /// 저장에 실패하면 false 를 돌려주고 목록도 바꾸지 않는다.
-  Future<bool> save(Question question, {Uint8List? imageBytes}) async {
+  Future<bool> save(
+    Question question, {
+    Uint8List? imageBytes,
+    Uint8List? audioBytes,
+    bool removeAudio = false,
+  }) async {
     final bool ok = await LocalStorage.instance.saveQuestion(
       id: question.id,
       questionJson: question.toJson(),
       imageBytes: imageBytes,
+      audioBytes: audioBytes,
+      removeAudio: removeAudio,
     );
     if (!ok) return false;
 
@@ -72,6 +82,11 @@ class QuestionStore extends ChangeNotifier {
       _custom.add(question);
     }
     if (imageBytes != null) _imageCache[question.id] = imageBytes;
+    if (audioBytes != null) {
+      _audioCache[question.id] = audioBytes;
+    } else if (removeAudio) {
+      _audioCache.remove(question.id);
+    }
     _sort();
     notifyListeners();
     return true;
@@ -80,6 +95,7 @@ class QuestionStore extends ChangeNotifier {
   Future<void> remove(Question question) async {
     _custom.removeWhere((Question q) => q.id == question.id);
     _imageCache.remove(question.id);
+    _audioCache.remove(question.id);
     notifyListeners();
     await LocalStorage.instance.deleteQuestion(question.id);
   }
@@ -90,6 +106,15 @@ class QuestionStore extends ChangeNotifier {
     final Uint8List? bytes =
         await LocalStorage.instance.loadQuestionImage(questionId);
     _imageCache[questionId] = bytes;
+    return bytes;
+  }
+
+  /// 문항에 붙여 둔 예시 음성. 없으면 null.
+  Future<Uint8List?> audioOf(String questionId) async {
+    if (_audioCache.containsKey(questionId)) return _audioCache[questionId];
+    final Uint8List? bytes =
+        await LocalStorage.instance.loadQuestionAudio(questionId);
+    _audioCache[questionId] = bytes;
     return bytes;
   }
 
