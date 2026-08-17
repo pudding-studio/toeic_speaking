@@ -64,6 +64,10 @@ TOEIC Speaking 시험(2021 개정, 11문항)을 파트별로 연습하는 Flutte
 - **한 번 만든 음성은 저장됩니다.** 같은 지문·음성·속도면 API 를 다시 부르지 않으므로
   요금은 처음 한 번만 발생합니다. 설정에서 저장된 개수를 보고 비울 수 있습니다.
 - Google 호출이 실패하면 브라우저 내장 음성으로 대신 읽고, 실패 이유를 안내합니다.
+- 브라우저 음성은 Web Speech API 를 직접 다룹니다. 크롬은 `getVoices()` 가 처음에
+  빈 배열을 돌려주고 나중에 채우므로, 목록이 준비될 때까지 기다린 뒤 **영어 음성을
+  골라 명시적으로 지정**합니다. 그러지 않으면 한국어 환경에서 영어 지문을 한국어
+  음성으로 읽습니다. 버튼 오른쪽에 실제로 고른 음성 이름이 표시됩니다.
 - 녹음이 시작되면 자동으로 멈춥니다. 읽어주기 소리가 답변 녹음에 섞이면 안 되기 때문입니다.
 
 ### 앱에서 등록한 문항
@@ -175,7 +179,7 @@ firebase deploy --only hosting
 ```bash
 dart format --output=none --set-exit-if-changed .   # 포맷 통과
 flutter analyze                                     # 이슈 없음
-flutter test                                        # 39개 테스트 통과
+flutter test                                        # 46개 테스트 통과
 flutter build web --release                         # 성공
 ```
 
@@ -201,6 +205,7 @@ lib/
 ├── services/
 │   ├── recorder_service.dart      마이크 녹음 → data URL 변환
 │   ├── tts_service.dart           읽어주기(Google TTS / 브라우저) + 캐시
+│   ├── browser_tts.dart           Web Speech API 직접 제어(조건부 임포트)
 │   ├── settings_store.dart        API 키·음성 설정
 │   ├── sample_audio_service.dart  문항에 올린 예시 음성 재생
 │   ├── question_transfer.dart     문항 내보내기·가져오기 형식
@@ -305,6 +310,5 @@ Question(
 
 ## 사용 패키지
 
-`record`(녹음) · `audioplayers`(재생·음성 출력) · `flutter_tts`(브라우저 읽어주기) ·
-`idb_shim`(IndexedDB) · `image_picker`(사진 선택) · `file_picker`(음성 파일 선택) ·
+`record`(녹음) · `audioplayers`(재생·음성 출력) · `idb_shim`(IndexedDB) · `image_picker`(사진 선택) · `file_picker`(음성 파일 선택) ·
 `http`(HTTP 호출) · `crypto`(캐시 키) · `web`(파일 내려받기) · `intl`(날짜 표시)

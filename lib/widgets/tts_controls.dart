@@ -19,87 +19,133 @@ class TtsControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
-
     return AnimatedBuilder(
       animation: TtsService.instance,
       builder: (BuildContext context, Widget? _) {
         final TtsService tts = TtsService.instance;
-        if (!tts.isAvailable) {
-          return Row(
-            children: <Widget>[
-              Icon(Icons.volume_off_outlined, size: 16, color: scheme.outline),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  '이 브라우저에서는 읽어주기를 쓸 수 없습니다.',
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    color: scheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-            ],
-          );
-        }
-
-        final bool speaking = tts.isSpeakingText(text);
-        final bool loading = tts.isLoadingText(text);
-        return Row(
-          children: <Widget>[
-            FilledButton.tonalIcon(
-              onPressed: enabled && !loading ? () => tts.toggle(text) : null,
-              style: FilledButton.styleFrom(
-                minimumSize: const Size(0, 40),
-                backgroundColor: color.withValues(alpha: 0.12),
-                foregroundColor: color,
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                textStyle: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              icon: loading
-                  ? SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: color,
-                      ),
-                    )
-                  : Icon(
-                      speaking ? Icons.stop_rounded : Icons.volume_up_rounded,
-                      size: 20,
-                    ),
-              label: Text(
-                loading
-                    ? '만드는 중'
-                    : speaking
-                        ? '정지'
-                        : '들어보기',
-              ),
-            ),
-            const SizedBox(width: 10),
-            _SpeedToggle(
-              slow: tts.isSlow,
-              color: color,
-              onChanged: enabled ? (bool slow) => tts.setSlow(slow) : null,
-            ),
-            const Spacer(),
-            Text(
-              !enabled
-                  ? '녹음 중에는 멈춤'
-                  : tts.engine == TtsEngine.google
-                      ? 'Google 음성'
-                      : '브라우저 음성',
-              style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
-            ),
-          ],
+        return TtsControlsView(
+          color: color,
+          enabled: enabled,
+          available: tts.isAvailable,
+          speaking: tts.isSpeakingText(text),
+          loading: tts.isLoadingText(text),
+          slow: tts.isSlow,
+          statusLabel: _statusLabel(tts, enabled: enabled),
+          onToggle: () => tts.toggle(text),
+          onSlowChanged: (bool slow) => tts.setSlow(slow),
         );
       },
     );
   }
+}
+
+/// 읽어주기 컨트롤의 겉모습. 서비스를 직접 보지 않아 그대로 테스트할 수 있다.
+class TtsControlsView extends StatelessWidget {
+  const TtsControlsView({
+    super.key,
+    required this.color,
+    required this.enabled,
+    required this.available,
+    required this.speaking,
+    required this.loading,
+    required this.slow,
+    required this.statusLabel,
+    required this.onToggle,
+    required this.onSlowChanged,
+  });
+
+  final Color color;
+  final bool enabled;
+  final bool available;
+  final bool speaking;
+  final bool loading;
+  final bool slow;
+  final String statusLabel;
+  final VoidCallback onToggle;
+  final ValueChanged<bool> onSlowChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+
+    if (!available) {
+      return Row(
+        children: <Widget>[
+          Icon(Icons.volume_off_outlined, size: 16, color: scheme.outline),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              '이 브라우저에서는 읽어주기를 쓸 수 없습니다.',
+              style: TextStyle(fontSize: 12.5, color: scheme.onSurfaceVariant),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Row(
+      children: <Widget>[
+        FilledButton.tonalIcon(
+          onPressed: enabled && !loading ? onToggle : null,
+          style: FilledButton.styleFrom(
+            minimumSize: const Size(0, 40),
+            backgroundColor: color.withValues(alpha: 0.12),
+            foregroundColor: color,
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            textStyle: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          icon: loading
+              ? SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: color,
+                  ),
+                )
+              : Icon(
+                  speaking ? Icons.stop_rounded : Icons.volume_up_rounded,
+                  size: 20,
+                ),
+          label: Text(
+            loading
+                ? '만드는 중'
+                : speaking
+                    ? '정지'
+                    : '들어보기',
+          ),
+        ),
+        const SizedBox(width: 10),
+        _SpeedToggle(
+          slow: slow,
+          color: color,
+          onChanged: enabled ? onSlowChanged : null,
+        ),
+        const Spacer(),
+        Flexible(
+          child: Text(
+            statusLabel,
+            textAlign: TextAlign.right,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// 지금 어떤 엔진·음성으로 읽는지 알려 준다.
+/// 브라우저 음성은 시스템에 깔린 음성에 따라 달라지므로 이름까지 보여 준다.
+String _statusLabel(TtsService tts, {required bool enabled}) {
+  if (!enabled) return '녹음 중에는 멈춤';
+  if (tts.engine == TtsEngine.google) return 'Google 음성';
+  final String? voice = tts.browserVoiceName;
+  return voice == null ? '브라우저 음성' : '브라우저 음성 · $voice';
 }
 
 class _SpeedToggle extends StatelessWidget {

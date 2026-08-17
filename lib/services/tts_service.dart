@@ -3,9 +3,9 @@ import 'dart:convert';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_tts/flutter_tts.dart';
 import 'package:http/http.dart' as http;
 
+import 'browser_tts.dart';
 import 'local_storage.dart';
 import 'settings_store.dart';
 
@@ -25,15 +25,6 @@ enum TtsEngine {
 /// 다시 들을 때는 API 를 부르지 않는다(요금이 다시 발생하지 않는다).
 class TtsService extends ChangeNotifier {
   TtsService._() {
-    _browserTts
-      ..setStartHandler(_onStart)
-      ..setCompletionHandler(_onDone)
-      ..setCancelHandler(_onDone)
-      ..setErrorHandler((Object? message) {
-        debugPrint('브라우저 읽어주기에 실패했습니다: $message');
-        _browserAvailable = false;
-        _onDone();
-      });
     _player.onPlayerComplete.listen((void _) => _onDone());
   }
 
@@ -47,13 +38,12 @@ class TtsService extends ChangeNotifier {
   static const String _endpoint =
       'https://texttospeech.googleapis.com/v1/text:synthesize';
 
-  final FlutterTts _browserTts = FlutterTts();
+  final BrowserTts _browserTts = BrowserTts();
   final AudioPlayer _player = AudioPlayer();
 
   bool _speaking = false;
   bool _loading = false;
   bool _browserAvailable = true;
-  bool _configured = false;
   double _rate = normalRate;
   String? _currentText;
   String? _lastError;
@@ -71,7 +61,12 @@ class TtsService extends ChangeNotifier {
       SettingsStore.instance.hasApiKey ? TtsEngine.google : TtsEngine.browser;
 
   /// 브라우저 음성조차 쓸 수 없는 상태인지.
-  bool get isAvailable => engine == TtsEngine.google || _browserAvailable;
+  bool get isAvailable =>
+      engine == TtsEngine.google ||
+      (_browserAvailable && _browserTts.isSupported);
+
+  /// 브라우저 음성으로 읽을 때 실제로 고른 음성 이름. 못 골랐으면 null.
+  String? get browserVoiceName => _browserTts.lastVoiceName;
 
   bool isSpeakingText(String text) => _speaking && _currentText == text;
   bool isLoadingText(String text) => _loading && _currentText == text;
@@ -141,24 +136,30 @@ class TtsService extends ChangeNotifier {
   }
 
   Future<void> _speakWithBrowser(String text) async {
-    if (!_browserAvailable) {
+    if (!_browserAvailable || !_browserTts.isSupported) {
+      _browserAvailable = false;
+      _lastError = '이 브라우저에서는 읽어주기를 쓸 수 없습니다.';
       _onDone();
       return;
     }
     try {
-      if (!_configured) {
-        await _browserTts
-            .setLanguage(SettingsStore.instance.voice.languageCode);
-        await _browserTts.setVolume(1.0);
-        await _browserTts.setPitch(1.0);
-        _configured = true;
-      }
-      await _browserTts.setSpeechRate(_rate);
       _currentText = text;
       // 시작 핸들러가 오지 않는 브라우저도 있어 즉시 표시를 켜 둔다.
       _speaking = true;
       notifyListeners();
-      await _browserTts.speak(text);
+      // 언어는 읽을 때마다 지정한다. 음성 목록이 늦게 채워지는 브라우저에서
+      // 한 번만 설정하면 영어 지문을 시스템 기본 음성으로 읽어 버린다.
+      await _browserTts.speak(
+        text,
+        languageCode: SettingsStore.instance.voice.languageCode,
+        rate: _rate,
+        onStart: _onStart,
+        onDone: _onDone,
+        onError: (String message) {
+          _lastError = message;
+          _onDone();
+        },
+      );
     } on Object catch (e) {
       debugPrint('브라우저 읽어주기에 실패했습니다: $e');
       _browserAvailable = false;
@@ -276,11 +277,7 @@ class TtsService extends ChangeNotifier {
   }
 
   Future<void> stop() async {
-    try {
-      await _browserTts.stop();
-    } on Object catch (e) {
-      debugPrint('읽어주기를 멈추지 못했습니다: $e');
-    }
+    _browserTts.stop();
     try {
       await _player.stop();
     } on Object catch (e) {
