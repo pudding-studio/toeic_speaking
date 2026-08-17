@@ -86,9 +86,12 @@ class SettingsStore extends ChangeNotifier {
   Future<void> load() async {
     if (_loaded) return;
     _loaded = true;
-    _apiKey = await LocalStorage.instance.loadSetting(_keyApiKey);
-    _voiceName = await LocalStorage.instance.loadSetting(_keyVoice) ??
-        kTtsVoices.first.name;
+    final List<String?> values = await Future.wait(<Future<String?>>[
+      LocalStorage.instance.loadSetting(_keyApiKey),
+      LocalStorage.instance.loadSetting(_keyVoice),
+    ]);
+    _apiKey = values[0];
+    _voiceName = values[1] ?? kTtsVoices.first.name;
     notifyListeners();
   }
 

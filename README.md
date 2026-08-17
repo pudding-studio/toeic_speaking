@@ -160,18 +160,30 @@ Flutter 버전은 각 워크플로 상단의 `FLUTTER_VERSION` 에서 한 곳씩
 ```bash
 firebase use --add                    # Firebase 프로젝트 선택 → .firebaserc 생성
 flutter build web --release
+tool/stamp_canvaskit.sh               # CanvasKit 폴더 이름에 엔진 버전 붙이기
 firebase deploy --only hosting
 ```
 
 빌드와 배포는 분리되어 있습니다(`firebase.json` 에 predeploy 훅 없음). 배포 전에
 `flutter build web --release` 를 먼저 실행해야 최신 코드가 올라갑니다.
 
+`tool/stamp_canvaskit.sh` 는 빼먹으면 안 됩니다. `web/flutter_bootstrap.js` 가
+`canvaskit-<엔진 버전>/` 경로에서 CanvasKit 을 찾기 때문에, 이 단계를 건너뛰면
+배포된 앱이 렌더링 엔진을 못 찾습니다. GitHub Actions 배포에는 이미 들어 있습니다.
+
 ### Hosting 설정 요약
 
 - `public: build/web`, SPA 라우팅(`rewrites`)
-- `index.html` / `main.dart.js` / `flutter_bootstrap.js` 는 `no-cache` — 배포 즉시 새 버전이 반영됩니다.
-- `canvaskit/` 1일, `assets/` 1시간 캐시.
-- `web/flutter_bootstrap.js` 에서 CanvasKit 을 Google CDN(gstatic) 대신 **같은 도메인에서** 받도록 지정했습니다. 사내망에서 CDN 이 막혀 있어도 앱이 뜹니다.
+- `index.html` / `main.dart.js` / `flutter_bootstrap.js` 는 `no-cache` — 캐시에 두되 매번
+  바뀌었는지만 확인합니다. 배포 즉시 새 버전이 반영되면서, 안 바뀌었으면 304 로 끝나
+  본문(약 900KB)을 다시 받지 않습니다. (`no-store` 로 두면 매번 통째로 다시 받습니다.)
+- `canvaskit-<엔진 버전>/` 은 1년 영구 캐시, `assets/` 는 1시간 캐시.
+- `web/flutter_bootstrap.js` 에서 CanvasKit 을 Google CDN(gstatic) 대신 **같은 도메인에서**
+  받도록 지정했습니다. 사내망에서 CDN 이 막혀 있어도 앱이 뜹니다. 경로에 엔진 버전을
+  넣는 이유는, CanvasKit 파일 이름이 늘 같아서 그냥 오래 캐시하면 Flutter 를 올렸을 때
+  새 `main.dart.js` 가 캐시에 남은 옛 CanvasKit 을 잡아 깨질 수 있기 때문입니다.
+  버전이 주소에 있으면 그런 일이 없어 안심하고 영구 캐시를 걸 수 있습니다.
+- `index.html` 에서 `main.dart.js` 를 `rel="preload"` 로 미리 받습니다.
 - Flutter 의 서비스 워커는 쓰지 않습니다(항상 최신 버전 로드).
 
 ## 검증 상태
@@ -233,6 +245,8 @@ web/
 ├── index.html                     로딩 표시, 한국어 메타데이터
 ├── flutter_bootstrap.js           CanvasKit 자체 호스팅 설정
 └── manifest.json                  PWA 매니페스트(홈 화면 추가용)
+
+tool/stamp_canvaskit.sh            CanvasKit 폴더에 엔진 버전 붙이기(배포 전 실행)
 
 .github/workflows/
 ├── ci.yml                         포맷·분석·테스트·빌드

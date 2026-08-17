@@ -72,6 +72,12 @@ jobs:
         if: steps.config.outputs.ready == 'true'
         run: flutter build web --release
 
+      # CanvasKit 폴더 이름에 엔진 리비전을 붙인다.
+      # 주소가 버전마다 달라지므로 firebase.json 에서 영구 캐시를 걸 수 있다.
+      - name: CanvasKit 경로에 버전 붙이기
+        if: steps.config.outputs.ready == 'true'
+        run: tool/stamp_canvaskit.sh
+
       - name: Firebase Hosting 배포
         if: steps.config.outputs.ready == 'true'
         uses: FirebaseExtended/action-hosting-deploy@v0

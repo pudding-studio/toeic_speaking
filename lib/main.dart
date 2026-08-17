@@ -8,9 +8,13 @@ import 'theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await SettingsStore.instance.load();
-  await QuestionStore.instance.load();
-  await AttemptStore.instance.load();
+  // 세 저장소 모두 같은 IndexedDB 연결을 쓴다. 차례로 기다리면 그만큼 첫 화면이
+  // 늦어지므로 한꺼번에 읽는다.
+  await Future.wait(<Future<void>>[
+    SettingsStore.instance.load(),
+    QuestionStore.instance.load(),
+    AttemptStore.instance.load(),
+  ]);
   runApp(const ToeicSpeakingApp());
 }
 

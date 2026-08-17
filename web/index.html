@@ -21,6 +21,10 @@
   <title>TOEIC Speaking 연습</title>
   <link rel="manifest" href="manifest.json">
 
+  <!-- 앱 코드(약 900KB)를 HTML 을 읽는 시점에 바로 받기 시작한다.
+       이게 없으면 flutter_bootstrap.js 가 실행된 뒤에야 받기 시작해 그만큼 늦어진다. -->
+  <link rel="preload" href="main.dart.js" as="script">
+
   <style>
     html, body { margin: 0; padding: 0; height: 100%; background-color: #f6f7fb; }
     @media (prefers-color-scheme: dark) {

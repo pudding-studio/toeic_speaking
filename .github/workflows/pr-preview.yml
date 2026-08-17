@@ -51,6 +51,7 @@ jobs:
         run: |
           flutter pub get
           flutter build web --release
+          tool/stamp_canvaskit.sh
 
       - name: 미리보기 채널 배포
         if: steps.config.outputs.ready == 'true'
