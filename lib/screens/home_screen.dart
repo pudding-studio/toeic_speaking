@@ -6,6 +6,7 @@ import '../models/toeic_part.dart';
 import '../services/attempt_store.dart';
 import '../services/playback_service.dart';
 import '../theme.dart';
+import 'curriculum_tab.dart';
 import 'exam_tab.dart';
 import 'overview_tab.dart';
 import 'part_tab.dart';
@@ -14,7 +15,8 @@ import 'recording_list.dart';
 
 /// 상단에 가로 스크롤 탭을 두고, 탭마다 파트 화면을 보여 주는 메인 화면.
 ///
-/// 탭 구성: 전체 → Q1-2 → Q3-4 → Q5-7 → Q8-10 → Q11 → 실전 모의고사 → 녹음 기록 (총 8개)
+/// 탭 구성: 전체 → Q1-2 → Q3-4 → Q5-7 → Q8-10 → Q11 → 학습 계획 → 실전 모의고사
+/// → 녹음 기록 (총 9개)
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -26,8 +28,11 @@ class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _controller;
 
-  /// 0 = 전체, 1..5 = 파트, 6 = 실전 모의고사, 7 = 녹음 기록
-  int get _tabCount => kToeicParts.length + 3;
+  /// 0 = 전체, 1..5 = 파트, 6 = 학습 계획, 7 = 실전 모의고사, 8 = 녹음 기록
+  int get _tabCount => kToeicParts.length + 4;
+
+  /// 실전 모의고사 탭의 위치.
+  int get _examTabIndex => kToeicParts.length + 2;
 
   @override
   void initState() {
@@ -56,6 +61,8 @@ class _HomeScreenState extends State<HomeScreen>
     final int index = kToeicParts.indexWhere((ToeicPart p) => p.id == partId);
     if (index >= 0) _controller.animateTo(index + 1);
   }
+
+  void _goToExam() => _controller.animateTo(_examTabIndex);
 
   /// 현재 탭에 해당하는 강조 색 (탭 인디케이터·라벨에 사용).
   Color get _currentColor {
@@ -118,6 +125,7 @@ class _HomeScreenState extends State<HomeScreen>
                 const Tab(text: '전체'),
                 for (final ToeicPart part in kToeicParts)
                   Tab(text: part.tabLabel),
+                const Tab(text: '학습 계획'),
                 const Tab(text: '실전 모의고사'),
                 const Tab(text: '녹음 기록'),
               ],
@@ -130,6 +138,7 @@ class _HomeScreenState extends State<HomeScreen>
         children: <Widget>[
           OverviewTab(onSelectPart: _goToPart),
           for (final ToeicPart part in kToeicParts) PartTab(part: part),
+          CurriculumTab(onSelectPart: _goToPart, onSelectExam: _goToExam),
           const ExamTab(),
           const HistoryTab(),
         ],

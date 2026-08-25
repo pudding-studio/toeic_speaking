@@ -10,20 +10,23 @@ void main() {
         home: const HomeScreen(),
       );
 
-  testWidgets('상단 탭에 전체 + 5개 파트 + 실전 모의고사 + 녹음 기록이 모두 있다',
+  testWidgets('상단 탭에 전체 + 5개 파트 + 학습 계획 + 실전 모의고사 + 녹음 기록이 모두 있다',
       (WidgetTester tester) async {
     await tester.pumpWidget(wrap());
     await tester.pumpAndSettle();
 
     final TabBar tabBar = tester.widget<TabBar>(find.byType(TabBar));
-    expect(tabBar.tabs.length, kToeicParts.length + 3);
-    expect(
-      find.descendant(
-        of: find.byType(TabBar),
-        matching: find.text('실전 모의고사'),
-      ),
-      findsOneWidget,
-    );
+    expect(tabBar.tabs.length, kToeicParts.length + 4);
+    for (final String label in <String>['학습 계획', '실전 모의고사', '녹음 기록']) {
+      expect(
+        find.descendant(
+          of: find.byType(TabBar),
+          matching: find.text(label),
+        ),
+        findsOneWidget,
+        reason: '$label 탭이 없습니다.',
+      );
+    }
   });
 
   testWidgets('상단 탭은 가로 스크롤이 가능하다', (WidgetTester tester) async {
