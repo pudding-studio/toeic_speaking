@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'screens/home_screen.dart';
 import 'services/attempt_store.dart';
+import 'services/exam_set_store.dart';
 import 'services/question_store.dart';
 import 'services/settings_store.dart';
 import 'theme.dart';
@@ -14,6 +15,7 @@ Future<void> main() async {
     SettingsStore.instance.load(),
     QuestionStore.instance.load(),
     AttemptStore.instance.load(),
+    ExamSetStore.instance.load(),
   ]);
   runApp(const ToeicSpeakingApp());
 }

@@ -17,6 +17,7 @@ TOEIC Speaking 시험(2021 개정, 11문항)을 파트별로 연습하는 Flutte
 | Q5-7 듣고 답하기 | 전화 인터뷰 3문항 (준비 3초 / 답변 15·15·30초) |
 | Q8-10 정보 활용 | 표 자료 기반 3문항 (자료 확인 45초 / 답변 15·15·30초) |
 | Q11 의견 제시 | 찬반·선택형 (준비 45초 / 답변 60초) |
+| 실전 모의고사 | Q1~Q11 을 실제 시험 순서·시간으로 연속 응시 |
 | 녹음 기록 | 저장된 모든 녹음 재생·삭제 |
 
 탭이 화면 너비를 넘기 때문에 좌우로 밀어서 이동할 수 있고, 본문을 스와이프해도 탭이
@@ -38,6 +39,7 @@ TOEIC Speaking 시험(2021 개정, 11문항)을 파트별로 연습하는 Flutte
 - **학습 통계** — 총 녹음 수 / 총 발화 시간 / 연습한 날짜 수.
 - **문항 직접 등록** — 코드를 고치지 않고 앱 화면에서 문항을 추가·수정·삭제할 수 있습니다.
   사진 묘사 문항은 사진을 직접 올릴 수 있습니다. 등록한 문항은 이 브라우저에만 저장됩니다.
+- **실전 모의고사** — 회차를 골라 Q1부터 Q11까지 한 번에 응시합니다. 아래 "실전 모의고사" 참고.
 
 ### 녹음 저장 방식
 
@@ -69,6 +71,26 @@ TOEIC Speaking 시험(2021 개정, 11문항)을 파트별로 연습하는 Flutte
   골라 명시적으로 지정**합니다. 그러지 않으면 한국어 환경에서 영어 지문을 한국어
   음성으로 읽습니다. 버튼 오른쪽에 실제로 고른 음성 이름이 표시됩니다.
 - 녹음이 시작되면 자동으로 멈춥니다. 읽어주기 소리가 답변 녹음에 섞이면 안 되기 때문입니다.
+
+### 실전 모의고사
+
+낱개 연습과 달리, 한 번 시작하면 **파트 안내 → 준비 시간 → 답변 시간**이 11문항이 끝날
+때까지 저절로 흘러갑니다. 중간에 누를 버튼은 "그만두기" 뿐이라 실제 시험과 같은 압박으로
+연습할 수 있습니다.
+
+- **파트 안내** — 파트가 바뀔 때 12초짜리 안내 화면이 뜹니다. 실제 시험의 디렉션 낭독에
+  해당하며, "바로 넘어가기" 로 건너뛸 수 있습니다.
+- **시험 조건 유지** — 응시 중에는 모범 답안·핵심 표현·지문 읽어주기·예시 음성을 보여 주지
+  않습니다. 끝난 뒤 파트 탭에서 같은 문항을 열면 볼 수 있습니다.
+- **결과 화면** — 11문항의 녹음을 번호 순서대로 모아 바로 다시 들어 볼 수 있습니다.
+  중단하더라도 그때까지 저장된 녹음은 남습니다.
+- **회차 만들기** — 직접 등록한 문항으로 나만의 회차를 만들 수 있습니다. 자리(Q1·Q2·Q3·Q4·
+  Q5-7·Q8-10·Q11)마다 문항을 고르면 실제 시험 순서대로 회차가 만들어집니다. 만든 회차는
+  이 브라우저에만 저장됩니다.
+
+기본 회차는 2회분이 들어 있습니다. 실제 TOEIC Speaking 기출 지문은 ETS 저작물이라 그대로
+실을 수 없어, `lib/data/question_bank.dart` 의 문항으로 같은 출제 형식·시간에 맞춰 짰습니다.
+기출 지문을 갖고 계시면 문항으로 등록한 뒤 회차로 묶어 쓰시면 됩니다.
 
 ### 앱에서 등록한 문항
 
@@ -191,7 +213,7 @@ firebase deploy --only hosting
 ```bash
 dart format --output=none --set-exit-if-changed .   # 포맷 통과
 flutter analyze                                     # 이슈 없음
-flutter test                                        # 46개 테스트 통과
+flutter test                                        # 68개 테스트 통과
 flutter build web --release                         # 성공
 ```
 
@@ -211,9 +233,11 @@ lib/
 ├── models/
 │   ├── toeic_part.dart            파트 정의(시간, 공략법, 템플릿)
 │   ├── question.dart              문항·질문·자료 모델
+│   ├── exam_set.dart              모의고사 회차 + 진행표(ExamPlan)
 │   └── attempt.dart               녹음 메타데이터 + JSON 직렬화
 ├── data/
-│   └── question_bank.dart         파트별 연습 문항 데이터
+│   ├── question_bank.dart         파트별 연습 문항 데이터
+│   └── exam_sets.dart             기본 모의고사 회차
 ├── services/
 │   ├── recorder_service.dart      마이크 녹음 → data URL 변환
 │   ├── tts_service.dart           읽어주기(Google TTS / 브라우저) + 캐시
@@ -225,17 +249,22 @@ lib/
 │   ├── local_storage.dart         IndexedDB (녹음 / 등록한 문항)
 │   ├── playback_service.dart      재생(재생 시점에 오디오 로드)
 │   ├── attempt_store.dart         녹음 목록 상태
-│   └── question_store.dart        기본 문항 + 등록한 문항 병합
+│   ├── question_store.dart        기본 문항 + 등록한 문항 병합
+│   └── exam_set_store.dart        기본 회차 + 만든 회차 병합
 ├── screens/
 │   ├── home_screen.dart           가로 스크롤 탭 + TabBarView
 │   ├── overview_tab.dart          "전체" 탭
 │   ├── part_tab.dart              파트별 문항 목록 + 등록 버튼
 │   ├── practice_screen.dart       준비→녹음→저장 진행 화면
+│   ├── exam_tab.dart              "실전 모의고사" 탭(회차 목록)
+│   ├── exam_screen.dart           11문항 연속 응시 화면
+│   ├── exam_set_editor_screen.dart  회차 만들기·고치기
 │   ├── question_editor_screen.dart  문항 등록·수정 폼
 │   ├── settings_screen.dart       읽어주기 설정 · API 키
 │   └── recording_list.dart        녹음 타일 / "녹음 기록" 탭
 └── widgets/
     ├── common.dart                카드, 배지, 자료 표, 공략법 시트
+    ├── question_content.dart      문항 내용 블록(연습·모의고사 공용)
     ├── tts_controls.dart          들어보기 · 속도 조절
     └── countdown_ring.dart        원형 카운트다운
 

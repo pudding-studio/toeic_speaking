@@ -6,6 +6,7 @@ import '../models/toeic_part.dart';
 import '../services/attempt_store.dart';
 import '../services/playback_service.dart';
 import '../theme.dart';
+import 'exam_tab.dart';
 import 'overview_tab.dart';
 import 'part_tab.dart';
 import 'settings_screen.dart';
@@ -13,7 +14,7 @@ import 'recording_list.dart';
 
 /// 상단에 가로 스크롤 탭을 두고, 탭마다 파트 화면을 보여 주는 메인 화면.
 ///
-/// 탭 구성: 전체 → Q1-2 → Q3-4 → Q5-7 → Q8-10 → Q11 → 녹음 기록 (총 7개)
+/// 탭 구성: 전체 → Q1-2 → Q3-4 → Q5-7 → Q8-10 → Q11 → 실전 모의고사 → 녹음 기록 (총 8개)
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -25,8 +26,8 @@ class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _controller;
 
-  /// 0 = 전체, 1..5 = 파트, 6 = 녹음 기록
-  int get _tabCount => kToeicParts.length + 2;
+  /// 0 = 전체, 1..5 = 파트, 6 = 실전 모의고사, 7 = 녹음 기록
+  int get _tabCount => kToeicParts.length + 3;
 
   @override
   void initState() {
@@ -117,6 +118,7 @@ class _HomeScreenState extends State<HomeScreen>
                 const Tab(text: '전체'),
                 for (final ToeicPart part in kToeicParts)
                   Tab(text: part.tabLabel),
+                const Tab(text: '실전 모의고사'),
                 const Tab(text: '녹음 기록'),
               ],
             ),
@@ -128,6 +130,7 @@ class _HomeScreenState extends State<HomeScreen>
         children: <Widget>[
           OverviewTab(onSelectPart: _goToPart),
           for (final ToeicPart part in kToeicParts) PartTab(part: part),
+          const ExamTab(),
           const HistoryTab(),
         ],
       ),

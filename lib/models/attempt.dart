@@ -15,6 +15,8 @@ class Attempt {
     required this.promptLabel,
     required this.durationSeconds,
     required this.createdAt,
+    this.examSetId,
+    this.questionNumber,
   });
 
   final String id;
@@ -25,6 +27,14 @@ class Attempt {
   final int durationSeconds;
   final DateTime createdAt;
 
+  /// 모의고사로 응시하며 녹음한 것이면 그 회차 id. 낱개 연습이면 null.
+  final String? examSetId;
+
+  /// 모의고사에서 몇 번 문항이었는지(1~11). 낱개 연습이면 null.
+  final int? questionNumber;
+
+  bool get isExam => examSetId != null;
+
   Map<String, dynamic> toMap() => <String, dynamic>{
         'id': id,
         'questionId': questionId,
@@ -33,6 +43,8 @@ class Attempt {
         'promptLabel': promptLabel,
         'durationSeconds': durationSeconds,
         'createdAt': createdAt.toIso8601String(),
+        if (examSetId != null) 'examSetId': examSetId,
+        if (questionNumber != null) 'questionNumber': questionNumber,
       };
 
   static Attempt? fromMap(Map<String, dynamic> map) {
@@ -54,6 +66,8 @@ class Attempt {
       promptLabel: (map['promptLabel'] as String?) ?? '',
       durationSeconds: (map['durationSeconds'] as num?)?.toInt() ?? 0,
       createdAt: DateTime.tryParse(createdAt) ?? DateTime.now(),
+      examSetId: map['examSetId'] as String?,
+      questionNumber: (map['questionNumber'] as num?)?.toInt(),
     );
   }
 

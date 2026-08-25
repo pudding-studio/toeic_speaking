@@ -9,6 +9,7 @@ import 'package:idb_shim/idb_browser.dart';
 /// - `audio`: 녹음 오디오(base64 data URL 문자열)
 /// - `questions`: 앱에서 등록한 문항(JSON 문자열)
 /// - `questionImages`: 등록한 문항의 사진(바이트)
+/// - `examSets`: 직접 만든 모의고사 회차(JSON 문자열)
 ///
 /// 오디오와 사진은 용량이 크므로 목록을 그릴 때는 읽지 않고 필요할 때만 꺼낸다.
 /// 시크릿 모드 등으로 IndexedDB 를 쓸 수 없으면 [isAvailable] 이 false 가 되고
@@ -20,8 +21,8 @@ class LocalStorage {
 
   static const String _dbName = 'toeic_speaking';
 
-  /// v4 에서 문항 예시 음성 스토어를 추가했다. 기존 데이터는 그대로 유지된다.
-  static const int _dbVersion = 4;
+  /// v5 에서 모의고사 회차 스토어를 추가했다. 기존 데이터는 그대로 유지된다.
+  static const int _dbVersion = 5;
   static const String _attemptStore = 'attempts';
   static const String _audioStore = 'audio';
   static const String _questionStore = 'questions';
@@ -29,6 +30,7 @@ class LocalStorage {
   static const String _settingsStore = 'settings';
   static const String _ttsCacheStore = 'ttsCache';
   static const String _questionAudioStore = 'questionAudio';
+  static const String _examSetStore = 'examSets';
 
   Database? _db;
   Future<Database?>? _opening;
@@ -75,6 +77,9 @@ class LocalStorage {
           }
           if (!db.objectStoreNames.contains(_questionAudioStore)) {
             db.createObjectStore(_questionAudioStore);
+          }
+          if (!db.objectStoreNames.contains(_examSetStore)) {
+            db.createObjectStore(_examSetStore);
           }
         },
       );
@@ -277,6 +282,59 @@ class LocalStorage {
     if (value is ByteBuffer) return value.asUint8List();
     if (value is List<int>) return Uint8List.fromList(value);
     return null;
+  }
+
+  // ─────────────────────── 직접 만든 모의고사 회차 ───────────────────────
+
+  Future<List<String>> loadExamSetJson() async {
+    final Database? db = await open();
+    if (db == null) return const <String>[];
+    try {
+      final Transaction txn = db.transaction(_examSetStore, idbModeReadOnly);
+      final List<String> result = <String>[];
+      await txn
+          .objectStore(_examSetStore)
+          .openCursor(autoAdvance: true)
+          .forEach((CursorWithValue cursor) {
+        final Object value = cursor.value;
+        if (value is String) result.add(value);
+      });
+      await txn.completed;
+      return result;
+    } on Object catch (e) {
+      debugPrint('회차 목록을 읽지 못했습니다: $e');
+      return const <String>[];
+    }
+  }
+
+  /// 회차를 저장한다. 이미 있는 id 면 덮어쓴다.
+  Future<bool> saveExamSet({
+    required String id,
+    required String examSetJson,
+  }) async {
+    final Database? db = await open();
+    if (db == null) return false;
+    try {
+      final Transaction txn = db.transaction(_examSetStore, idbModeReadWrite);
+      await txn.objectStore(_examSetStore).put(examSetJson, id);
+      await txn.completed;
+      return true;
+    } on Object catch (e) {
+      debugPrint('회차를 저장하지 못했습니다: $e');
+      return false;
+    }
+  }
+
+  Future<void> deleteExamSet(String id) async {
+    final Database? db = await open();
+    if (db == null) return;
+    try {
+      final Transaction txn = db.transaction(_examSetStore, idbModeReadWrite);
+      await txn.objectStore(_examSetStore).delete(id);
+      await txn.completed;
+    } on Object catch (e) {
+      debugPrint('회차를 삭제하지 못했습니다: $e');
+    }
   }
 
   // ─────────────────────────── 설정 ───────────────────────────

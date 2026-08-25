@@ -14,7 +14,7 @@ import '../services/tts_service.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/countdown_ring.dart';
-import '../widgets/tts_controls.dart';
+import '../widgets/question_content.dart';
 import 'recording_list.dart';
 
 enum _Phase { ready, prep, answering, stepDone, finished }
@@ -300,7 +300,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
                     if (running || _phase == _Phase.stepDone) _timerPanel(),
                     if (running || _phase == _Phase.stepDone)
                       const SizedBox(height: 20),
-                    ..._contentBlocks(),
+                    _content(),
                     if (_phase == _Phase.finished) ...<Widget>[
                       const SizedBox(height: 16),
                       _finishedPanel(),
@@ -369,222 +369,20 @@ class _PracticeScreenState extends State<PracticeScreen> {
     );
   }
 
-  List<Widget> _contentBlocks() {
-    final List<Widget> blocks = <Widget>[];
-    final ColorScheme scheme = Theme.of(context).colorScheme;
-
-    if (_q.hasSampleAudio) {
-      blocks.add(_SectionCard(
-        title: '예시 음성',
-        color: _color,
-        child: SampleAudioControls(
-          questionId: _q.id,
-          color: _color,
-          enabled: _phase != _Phase.answering,
-        ),
-      ));
-    }
-
-    if (_q.passage != null) {
-      blocks.add(_SectionCard(
-        title: '읽을 지문',
-        color: _color,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            SelectableText(
-              _q.passage!,
-              style: const TextStyle(fontSize: 17, height: 1.75),
-            ),
-            const SizedBox(height: 14),
-            const Divider(height: 1),
-            const SizedBox(height: 12),
-            // 녹음 중에는 읽어주기 소리가 마이크로 들어가므로 막는다.
-            TtsControls(
-              text: _q.passage!,
-              color: _color,
-              enabled: _phase != _Phase.answering,
-            ),
-          ],
-        ),
-      ));
-    }
-
-    if (_q.imagePath != null) {
-      blocks.add(_SectionCard(
-        title: '사진',
-        color: _color,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: AspectRatio(
-            aspectRatio: 4 / 3,
-            child: Image.asset(
-              _q.imagePath!,
-              fit: BoxFit.cover,
-              // 에셋을 못 찾아도 연습은 계속할 수 있어야 한다.
-              errorBuilder:
-                  (BuildContext context, Object error, StackTrace? _) {
-                return ColoredBox(
-                  color: scheme.surfaceContainerHighest,
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        Icon(
-                          Icons.image_not_supported_outlined,
-                          size: 32,
-                          color: scheme.outline,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          '사진을 불러오지 못했습니다',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: scheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
-      ));
-    }
-
-    // 사진이 있으면 텍스트 장면 설명은 생략한다.
-    if (_q.scene != null && _q.imagePath == null) {
-      blocks.add(_SectionCard(
-        title: '사진 상황',
-        color: _color,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: BoxDecoration(
-                color: _color.withValues(alpha: 0.09),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: <Widget>[
-                  Icon(Icons.place_outlined, size: 18, color: _color),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _q.scene!.place,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            for (final String d in _q.scene!.details)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Padding(
-                      padding: const EdgeInsets.only(top: 7),
-                      child: Container(
-                        width: 5,
-                        height: 5,
-                        decoration: BoxDecoration(
-                          color: scheme.outline,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        d,
-                        style: const TextStyle(fontSize: 15, height: 1.5),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-          ],
-        ),
-      ));
-    }
-
-    if (_q.table != null) {
-      blocks.add(Padding(
-        padding: const EdgeInsets.only(bottom: 14),
-        child: InfoTableView(table: _q.table!, color: _color),
-      ));
-    }
-
-    // 현재 단계의 질문 (낭독형은 질문이 곧 제목이라 생략)
-    if (_q.prompts.isNotEmpty) {
-      blocks.add(_SectionCard(
-        title: _step.label ?? '질문',
-        color: _color,
-        highlighted: true,
-        child: SelectableText(
-          _step.text,
-          style: const TextStyle(fontSize: 17, height: 1.6),
-        ),
-      ));
-    }
-
-    if (_phase == _Phase.finished || _phase == _Phase.ready) {
-      if (_q.keyExpressions.isNotEmpty) {
-        blocks.add(_SectionCard(
-          title: '핵심 표현',
-          color: _color,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              for (final String e in _q.keyExpressions)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 9),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Icon(Icons.chevron_right, size: 18, color: _color),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          e,
-                          style: const TextStyle(fontSize: 15, height: 1.5),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-        ));
-      }
-      if (_q.sampleAnswer != null) {
-        blocks.add(_SectionCard(
-          title: '모범 답안',
-          color: _color,
-          child: SelectableText(
-            _q.sampleAnswer!,
-            style: const TextStyle(fontSize: 15.5, height: 1.7),
-          ),
-        ));
-      }
-    }
-
-    return blocks;
+  Widget _content() {
+    return QuestionContent(
+      question: _q,
+      step: _step,
+      color: _color,
+      // 녹음 중에는 스피커 소리가 마이크로 들어가므로 막는다.
+      audioEnabled: _phase != _Phase.answering,
+      showAnswers: _phase == _Phase.finished || _phase == _Phase.ready,
+    );
   }
 
   Widget _finishedPanel() {
     if (_sessionAttempts.isEmpty) return const SizedBox.shrink();
-    return _SectionCard(
+    return SectionCard(
       title: '이번 연습 녹음',
       color: _color,
       child: Column(
@@ -748,59 +546,6 @@ class _StepIndicator extends StatelessWidget {
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SectionCard extends StatelessWidget {
-  const _SectionCard({
-    required this.title,
-    required this.color,
-    required this.child,
-    this.highlighted = false,
-  });
-
-  final String title;
-  final Color color;
-  final Widget child;
-  final bool highlighted;
-
-  @override
-  Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: highlighted
-              ? color.withValues(alpha: 0.55)
-              : scheme.outlineVariant,
-          width: highlighted ? 1.5 : 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              Container(width: 4, height: 16, color: color),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          child,
         ],
       ),
     );
